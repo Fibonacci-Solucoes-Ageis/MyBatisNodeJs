@@ -12,9 +12,27 @@ MyBatisNodeJs assumes that your POJO's (domains objects) exist on the directory 
 
 * How to use:
 
-To process the xml mapping files and get an sessionFactory instance:
+1) Write your MyBatis mapping files:
 
-````javascript
+To Know how to write mapping files read: 
+http://mybatis.github.io/mybatis-3/
+
+2) Create a connection to your database
+
+```javascript
+var mysql = require('mysql');
+var pool  = mysql.createPool({
+    host     : 'localhost',
+    user     : '****',
+    password : '****',
+    database : 'database',
+    typeCast : true,
+    multipleStatements: true
+});
+
+3) To process the xml mapping files and get an sessionFactory instance:
+
+```javascript
 var sessionFactory  = new mybatis.Principal().processe(dir_xml);
 global.sessionFactory = sessionFactory;
 ```
@@ -23,10 +41,12 @@ The string variable dir_xml points to the MyBatis mapping files directory.
 
 The variable sessionFactory has methods for selectOne, selectMany, insert, update or delete objects.
 
-To know how to write mappings files read: [http://mybatis.github.io/mybatis-3/]
+4) Select one object:
 
 ```javascript
-sessionFactory.selecioneUm('user.select', {id: 1}, this.pool, callback);
+sessionFactory.selecioneUm('user.select', {id: 1}, pool, function(user) {
+   //console.log(user);
+});
 ```
 
 The callback function is called with the user or null if not found.
