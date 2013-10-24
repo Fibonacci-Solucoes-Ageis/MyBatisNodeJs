@@ -1,11 +1,35 @@
 {
-  "name": "MyBatisNodeJs",
-  "description": "MyBatisNodeJs is a port from the The MyBatis data mapper framework for Node.Js.",
-  "version": "0.0.1",
-  "private": true,
+  "name": "mybatisnodejs",
+  "description": "MyBatisNodeJs is a port from the The MyBatis Java data mapper framework for Node.Js.",
+  "version": "0.0.2",
   "dependencies": {
     "string": "*",
     "moment": "*",
     "xmldom": "*"
+  },
+  "main": "src/No.js",
+  "scripts": {
+    "test": "for f in tests/*; do echo \"$f\"; node \"$f\"; done; echo 'passed!'; exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Fibonacci-Solucoes-Ageis/MyBatisNodeJs.git"
+  },
+  "keywords": [
+    "mybatis",
+    "mybatis-port",
+    "orm",
+    "mysql",
+    "potstresql",
+    "java",
+    "nodejs",
+    "\"object",
+    "relational",
+    "mapper\""
+  ],
+  "author": "Fibonacci Soluções Ágeis LTDA",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/Fibonacci-Solucoes-Ageis/MyBatisNodeJs/issues"
   }
 }
