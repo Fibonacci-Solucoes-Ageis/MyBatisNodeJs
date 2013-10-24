@@ -15,11 +15,15 @@ MyBatisNodeJs assumes that your POJO's (domains objects) exist on the directory 
 To process the xml mapping files and get an sessionFactory instance:
 
 ````javascript
-var sessionFactory  = new mybatis.Principal().processe('/Volumes/1TB/Trabalho2/TwitRadio/grails-app/conf/ibatis/');
+var sessionFactory  = new mybatis.Principal().processe(dir_xml);
 global.sessionFactory = sessionFactory;
 ```
 
+The string variable dir_xml points to the MyBatis mapping files directory.
+
 The variable sessionFactory has methods for selectOne, selectMany, insert, update or delete objects.
+
+To know how to write mappings files read: [http://mybatis.github.io/mybatis-3/]
 
 ```javascript
 sessionFactory.selecioneUm('user.select', {id: 1}, this.pool, callback);
