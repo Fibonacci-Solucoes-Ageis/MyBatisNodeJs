@@ -1,3 +1,4 @@
+var dir_xml = '';
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -10,7 +11,6 @@ var vm = require('vm');
 var util = require('util');
 var moment = require('moment');
 var DOMParser = require('xmldom').DOMParser;
-var config = require('../config');
 var S = require('string');
 
 function ComandoSql() {
@@ -959,12 +959,12 @@ var Principal = (function () {
         return noWhen;
     }
 
-    Principal.prototype.processe = function () {
+    Principal.prototype.processe = function (dir_xml) {
         var mapaNos = {};
 
         var gerenciadorDeMapeamentos = new GerenciadorDeMapeamentos();
 
-        var arquivos = fs.readdirSync("./dominio");
+        var arquivos = fs.readdirSync("./domain");
         var models = {};
 
         for (var i in arquivos) {
@@ -974,18 +974,14 @@ var Principal = (function () {
 
             if( arquivo.indexOf(".js") == -1 ) continue;
 
-            gerenciadorDeMapeamentos.adicioneModel(nomeClasseDominio, require("../dominio/" + nomeClasseDominio));
+            gerenciadorDeMapeamentos.adicioneModel(nomeClasseDominio, require("../../../domain/" + nomeClasseDominio));
         }
 
-        //var dir_ibatis = '/Volumes/1TB/Trabalho2/TwitRadio/grails-app/conf/ibatis/';
-        //var dir_ibatis = '/Fibonacci/trunk/TwitRadio/grails-app/conf/ibatis/';
-        var dir_ibatis = config.diretorio.ibatis;
-
-        arquivos = fs.readdirSync(dir_ibatis);
+        arquivos = fs.readdirSync(dir_xml);
         for (var i in arquivos) {
             var arquivo = arquivos[i];
 
-            var mapeamento = this.processeArquivo(dir_ibatis + arquivo);
+            var mapeamento = this.processeArquivo(dir_xml + arquivo);
 
             gerenciadorDeMapeamentos.adicione(mapeamento);
         }
@@ -1290,6 +1286,8 @@ var Mapeamento = (function () {
     };
     return Mapeamento;
 })();
+
+exports.dir_xml = dir_xml;
 exports.Mapeamento = Mapeamento;
 
 //# sourceMappingURL=No.js.map
