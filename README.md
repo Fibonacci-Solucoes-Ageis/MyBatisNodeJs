@@ -29,6 +29,7 @@ var pool  = mysql.createPool({
     typeCast : true,
     multipleStatements: true
 });
+```
 
 3) To process the xml mapping files and get an sessionFactory instance:
 
