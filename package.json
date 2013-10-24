@@ -1,0 +1,11 @@
+{
+  "name": "MyBatisNodeJs",
+  "description": "MyBatisNodeJs is a port from the The MyBatis data mapper framework for Node.Js.",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "express": "3.x",
+    "mongodb": "*",
+    "mongoose": "*"
+  }
+}
