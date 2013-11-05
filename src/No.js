@@ -15,7 +15,11 @@ var S = require('string');
 
 function ComandoSql() {
     this.sql = '';
-    this.dados = [];
+    this.parametros = [];
+}
+
+ComandoSql.prototype.adicioneParametro = function(valor) {
+    this.parametros.push(valor);
 }
 
 var No = (function () {
@@ -24,6 +28,7 @@ var No = (function () {
         this.mapeamento = mapeamento;
         this.filhos = [];
     }
+
     No.prototype.adicione = function (no) {
         this.filhos.push(no);
     };
@@ -39,16 +44,14 @@ var No = (function () {
         }
     };
 
-    No.prototype.obtenhaSql = function (dados, pool) {
-        var sql = '';
-
+    No.prototype.obtenhaSql = function (comandoSql, dados, pool) {
         for (var i in this.filhos) {
             var noFilho = this.filhos[i];
 
-            sql += noFilho.obtenhaSql(dados, pool) + " ";
+            noFilho.obtenhaSql(comandoSql, dados, pool);
         }
 
-        return sql;
+        return comandoSql;
     };
 
     No.prototype.getValue = function (data, path) {
@@ -64,10 +67,9 @@ var No = (function () {
         return this.mapeamento.nome + "." + this.id;
     };
 
-    No.prototype.processeExpressao = function (texto, dados) {
+    No.prototype.processeExpressao = function (texto, comandoSql, dados) {
         var myArray;
-        var regex = new RegExp('#\{([a-z.A-Z_]+)}', 'ig');
-
+        var regex = new RegExp('#\{([a-z.A-Z0-9]+)}', 'ig');
         var expressao = texto;
 
         while ((myArray = regex.exec(texto)) !== null) {
@@ -76,18 +78,24 @@ var No = (function () {
 
             // console.log(trecho + " -> " + valorPropriedade);
             if (valorPropriedade == null) {
-                expressao = expressao.replace(trecho, null);
+                expressao = expressao.replace(trecho, '?');
+                comandoSql.adicioneParametro(null);
             } else if (typeof valorPropriedade == "number") {
-                expressao = expressao.replace(trecho, valorPropriedade);
+                expressao = expressao.replace(trecho, '?');
+                comandoSql.adicioneParametro(valorPropriedade);
             } else if (typeof valorPropriedade == 'string') {
-                expressao = expressao.replace(trecho, "'" + valorPropriedade + "'");
+                expressao = expressao.replace(trecho, '?');
+                comandoSql.adicioneParametro(valorPropriedade);
             } else if (typeof valorPropriedade == 'boolean') {
-                expressao = expressao.replace(trecho, valorPropriedade);
+                expressao = expressao.replace(trecho, '?');
+                comandoSql.adicioneParametro(valorPropriedade);
             } else if (util.isDate(valorPropriedade)) {
                 var valor = moment(valorPropriedade).format('YYYY-MM-DD HH:mm:ss');
 
                 // console.log(valor);
-                expressao = expressao.replace(trecho, "'" + valor + "'");
+                expressao = expressao.replace(trecho, '?');
+
+                comandoSql.adicioneParametro(valor);
             } else if (util.isArray(valorPropriedade)) {
                 throw new Error("Não pode traduzir trecho " + trecho + " pela coleção: " + valorPropriedade);
             }
@@ -121,8 +129,8 @@ var NoString = (function (_super) {
         console.log(this.texto);
     };
 
-    NoString.prototype.obtenhaSql = function (dados, pool) {
-        return _super.prototype.processeExpressao.call(this, this.texto, dados);
+    NoString.prototype.obtenhaSql = function (comandoSql, dados, pool) {
+        comandoSql.sql += _super.prototype.processeExpressao.call(this, this.texto, comandoSql, dados) + " ";
     };
     return NoString;
 })(No);
@@ -141,7 +149,7 @@ var NoChoose = (function (_super) {
         }
     };
 
-    NoChoose.prototype.obtenhaSql = function (dados, pool) {
+    NoChoose.prototype.obtenhaSql = function (comandoSql, dados, pool) {
         for (var i in this.filhos) {
             var no = this.filhos[i];
 
@@ -157,13 +165,13 @@ var NoChoose = (function (_super) {
                 }
 
                 if (dados.valorExpressao) {
-                    return noWhen.obtenhaSql(dados);
+                    return noWhen.obtenhaSql(comandoSql, dados, pool);
                 }
             }
         }
 
         if (this.noOtherwise) {
-            return this.noOtherwise.obtenhaSql(dados, pool);
+            return this.noOtherwise.obtenhaSql(comandoSql, dados, pool);
         }
 
         return '';
@@ -195,8 +203,9 @@ var NoWhen = (function (_super) {
             this.expressaoTeste = this.expressaoTeste.replace(identificador, "dados." + identificador);
         }
 
-        this.expressaoTeste = S(this.expressaoTeste).replaceAll('and', '&&');
+        this.expressaoTeste = S(this.expressaoTeste).replaceAll('and', '&&').toString();
     }
+
     NoWhen.prototype.imprima = function () {
         console.log('when(' + this.expressaoTeste + '): ' + this.texto);
     };
@@ -218,7 +227,7 @@ var NoForEach = (function (_super) {
         this.collection = collection;
         this.texto = texto.trim();
     }
-    NoForEach.prototype.obtenhaSql = function (dados) {
+    NoForEach.prototype.obtenhaSql = function (comandoSql, dados) {
         var texto = [];
 
         var colecao = dados[this.collection];
@@ -246,9 +255,11 @@ var NoForEach = (function (_super) {
                 var valorPropriedade = this.getValue(item, propriedade.split("."));
 
                 if (typeof valorPropriedade == "number") {
-                    novaExpressao = novaExpressao.replace(trecho, valorPropriedade);
+                    novaExpressao = novaExpressao.replace(trecho, '?');
+                    comandoSql.adicioneParametro(valorPropriedade);
                 } else if (typeof valorPropriedade == 'string') {
-                    novaExpressao = novaExpressao.replace(trecho, "'" + valorPropriedade + "'");
+                    novaExpressao = novaExpressao.replace(trecho, '?');
+                    comandoSql.adicioneParametro(valorPropriedade);
                 }
             }
 
@@ -257,7 +268,9 @@ var NoForEach = (function (_super) {
 
         var sql = this.abertura + texto.join(this.separador) + this.fechamento;
 
-        return " " + sql + " ";
+        comandoSql.sql += sql;
+
+        return comandoSql;
     };
     return NoForEach;
 })(No);
@@ -299,7 +312,7 @@ var NoIf = (function (_super) {
         return data;
     };
 
-    NoIf.prototype.obtenhaSql = function (dados, pool) {
+    NoIf.prototype.obtenhaSql = function(comandoSql, dados, pool) {
         var expressao = this.expressaoTeste.replace('#{', "dados.").replace("}", "");
 
         try  {
@@ -313,7 +326,7 @@ var NoIf = (function (_super) {
         }
 
         //console.log(this.texto);
-        return _super.prototype.processeExpressao.call(this, this.texto, dados);
+        comandoSql.sql += _super.prototype.processeExpressao.call(this, this.texto, comandoSql, dados) + " ";
     };
     return NoIf;
 })(No);
@@ -330,7 +343,7 @@ var NoOtherwise = (function (_super) {
         console.log('otherwise(' + this.texto + ')');
     };
 
-    NoOtherwise.prototype.obtenhaSql = function (dados, pool) {
+    NoOtherwise.prototype.obtenhaSql = function (comandoSql, dados, pool) {
         var myArray;
         var regex = new RegExp('#\{([a-z.A-Z]+)}', 'ig');
 
@@ -341,16 +354,20 @@ var NoOtherwise = (function (_super) {
             var valorPropriedade = this.getValue(dados, myArray[1].split('.'));
 
             if (typeof valorPropriedade == "number") {
-                expressao = expressao.replace(trecho, valorPropriedade);
+                expressao = expressao.replace(trecho, '?');
+                comandoSql.adicioneParametro(valorPropriedade);
             } else if (typeof valorPropriedade == 'string') {
-                expressao = expressao.replace(trecho, "'" + valorPropriedade + "'");
+                expressao = expressao.replace(trecho, '?');
+                comandoSql.adicioneParametro(valorPropriedade);
             } else if (typeof valorPropriedade == 'boolean') {
-                expressao = expressao.replace(trecho, valorPropriedade);
+                expressao = expressao.replace(trecho, '?');
+                comandoSql.adicioneParametro(valorPropriedade);
             }
         }
 
-        return expressao;
+        comandoSql.sql += expressao + " ";
     };
+
     return NoOtherwise;
 })(No);
 exports.NoOtherwise = NoOtherwise;
@@ -393,6 +410,14 @@ var NoAssociacao = (function (_super) {
     NoAssociacao.prototype.imprima = function () {
         console.log('associacao(' + this.nome + ":" + this.coluna + " -> " + this.resultMap);
     };
+
+    NoAssociacao.prototype.obtenhaNomeCompleto = function() {
+        if( this.resultMap.indexOf(".") == -1 ) {
+            return this.nome + "." + this.resultMap;
+        }
+
+        return this.resultMap;
+    }
 
     NoAssociacao.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, objeto, registro, chavePai) {
         var no = gerenciadorDeMapeamentos.obtenhaResultMap(this.resultMap);
@@ -567,7 +592,6 @@ var NoResultMap = (function (_super) {
             if (!objetoConhecido) {
                 objetos.push(objeto);
             } else {
-                console.log(3);
             }
         }
 
@@ -764,7 +788,13 @@ var Principal = (function () {
         if (atributoColuna)
             valorColuna = atributoColuna.value;
 
-        noResultMap.adicione(new NoAssociacao(no.getAttributeNode('property').value, valorColuna, no.getAttributeNode('resultMap').value));
+        var resultMap = no.getAttributeNode('resultMap').value;
+
+        if( resultMap.indexOf(".") == -1 ) {
+            resultMap = noResultMap.mapeamento.nome + "." + resultMap;
+        }
+
+        noResultMap.adicione(new NoAssociacao(no.getAttributeNode('property').value, valorColuna, resultMap));
     };
 
     Principal.prototype.leiaCollectionProperty = function (no, noResultMap) {
@@ -1073,17 +1103,22 @@ var GerenciadorDeMapeamentos = (function () {
         var me = this;
         var no = this.obtenhaNo(nomeCompleto);
 
-        var sql = no.obtenhaSql(objeto, pool);
+        var comandoSql = new ComandoSql();
 
-        console.log(sql);
+        no.obtenhaSql(comandoSql, objeto, pool);
+
+        console.log(comandoSql.sql);
+        console.log(comandoSql.parametros);
 
         pool.getConnection(function (err, connection) {
-            connection.query(sql, function (err, rows, fields) {
+            connection.query(comandoSql.sql, comandoSql.parametros, function (err, rows, fields) {
                 connection.release();
                 if (err)
                     throw err;
 
-                objeto.id = rows.insertId;
+                if( rows.insertId ) {
+                    objeto.id = rows.insertId;
+                }
 
                 if (callback) {
                     callback();
@@ -1118,12 +1153,13 @@ var GerenciadorDeMapeamentos = (function () {
         var me = this;
         var no = this.obtenhaNo(nomeCompleto);
 
-        var sql = no.obtenhaSql(objeto, pool);
+        var comandoSql = new ComandoSql();
+        var sql = no.obtenhaSql(comandoSql, objeto, pool);
 
         console.log(sql);
 
         pool.getConnection(function (err, connection) {
-            connection.query(sql, function (err, rows, fields) {
+            connection.query(comandoSql.sql, comandoSql.parametros, function (err, rows, fields) {
                 connection.release();
                 if (err)
                     throw err;
@@ -1199,9 +1235,9 @@ var GerenciadorDeMapeamentos = (function () {
             var me = this;
             var no = this.obtenhaNo(nomeCompleto);
 
-            var sql = no.obtenhaSql(dados, pool);
+            var comandoSql = new ComandoSql();
 
-            console.log(sql);
+            no.obtenhaSql(comandoSql, dados, pool);
 
             var nomeResultMap = no.resultMap;
 
@@ -1216,7 +1252,9 @@ var GerenciadorDeMapeamentos = (function () {
             }
 
             pool.getConnection(function (err, connection) {
-                connection.query(sql, function (err, rows, fields) {
+                console.log(comandoSql.sql);
+                console.log(comandoSql.parametros);
+                connection.query(comandoSql.sql, comandoSql.parametros, function (err, rows, fields) {
                     connection.release();
 
                     if (err) {
