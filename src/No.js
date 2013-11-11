@@ -69,7 +69,7 @@ var No = (function () {
 
     No.prototype.processeExpressao = function (texto, comandoSql, dados) {
         var myArray;
-        var regex = new RegExp('#\{([a-z.A-Z0-9]+)}', 'ig');
+        var regex = new RegExp('#\{([a-z.A-Z0-9_]+)}', 'ig');
         var expressao = texto;
 
         while ((myArray = regex.exec(texto)) !== null) {
