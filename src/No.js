@@ -326,7 +326,8 @@ var NoIf = (function (_super) {
         }
 
         //console.log(this.texto);
-        comandoSql.sql += _super.prototype.processeExpressao.call(this, this.texto, comandoSql, dados) + " ";
+        //comandoSql.sql += _super.prototype.processeExpressao.call(this, this.texto, comandoSql, dados) + " ";
+        _super.prototype.obtenhaSql.call(this, comandoSql, dados) + " ";
     };
     return NoIf;
 })(No);
@@ -941,6 +942,24 @@ var Principal = (function () {
 
     Principal.prototype.leiaIf = function (nome, no, noPrincipal, mapeamento) {
         var noIf = new NoIf(no.getAttributeNode('test').value, no.childNodes[0].toString(), mapeamento);
+
+        for (var i = 0; i < no.childNodes.length; i++) {
+            var noFilho = no.childNodes[i];
+
+            if (noFilho.nodeName == 'choose') {
+                this.leiaChoose('choose', noFilho, noIf, mapeamento);
+            } else if (noFilho.nodeName == 'if') {
+                this.leiaIf('choose', noFilho, noIf, mapeamento);
+            } else if (noFilho.nodeName == 'foreach') {
+                this.leiaForEach('foreach', noFilho, noIf, mapeamento);
+            } else {
+                if (noFilho.hasChildNodes() == false) {
+                    var noString = new NoString(noFilho.textContent, mapeamento);
+
+                    noIf.adicione(noString);
+                }
+            }
+        }
 
         noPrincipal.adicione(noIf);
     };
