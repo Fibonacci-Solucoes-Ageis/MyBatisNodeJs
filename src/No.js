@@ -304,15 +304,6 @@ var NoIf = (function (_super) {
         console.log('if(' + this.expressaoTeste + '): ' + this.texto);
     };
 
-    NoIf.prototype.getValue = function (data, path) {
-        var i, len = path.length;
-
-        for (i = 0; typeof data === 'object' && i < len; ++i) {
-            data = data[path[i]];
-        }
-        return data;
-    };
-
     NoIf.prototype.obtenhaSql = function(comandoSql, dados, pool) {
         var expressao = this.expressaoTeste.replace('#{', "dados.").replace("}", "");
 
