@@ -58,7 +58,8 @@ var No = (function () {
         var i, len = path.length;
 
         for (i = 0; typeof data === 'object' && i < len; ++i) {
-            data = data[path[i]];
+            if( data )
+                data = data[path[i]];
         }
         return data;
     };
