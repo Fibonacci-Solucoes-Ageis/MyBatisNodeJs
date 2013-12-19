@@ -12,6 +12,7 @@ var util = require('util');
 var moment = require('moment');
 var DOMParser = require('xmldom').DOMParser;
 var S = require('string');
+var Contexto = require('./Contexto');
 
 function ComandoSql() {
     this.sql = '';
@@ -1318,5 +1319,6 @@ var Mapeamento = (function () {
 
 exports.dir_xml = dir_xml;
 exports.Mapeamento = Mapeamento;
+exports.Contexto = Contexto;
 
 //# sourceMappingURL=No.js.map
