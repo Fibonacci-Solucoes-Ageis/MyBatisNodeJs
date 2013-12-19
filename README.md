@@ -21,7 +21,7 @@ http://mybatis.github.io/mybatis-3/
 
 ```javascript
 var mysql = require('mysql');
-var pool  = mysql.createPool({
+global.pool = mysql.createPool({
     host     : 'localhost',
     user     : '****',
     password : '****',
