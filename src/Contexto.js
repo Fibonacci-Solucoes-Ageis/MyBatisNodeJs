@@ -13,7 +13,6 @@ Contexto.prototype = {
         this.conexao = connection ;
         this.carregando = false;
         for(var i=0; i< this.callbacks.length; i++) {
-            console.log('notificando callback: ' + this.conexao);
             this.callbacks[i](this.conexao);
         }
     },
@@ -22,7 +21,6 @@ Contexto.prototype = {
         var me = this;
 
         if(this.conexao) {
-            console.log('retornando conexao existente: ' + this.conexao);
             return callback(this.conexao);
         }
 
@@ -33,7 +31,6 @@ Contexto.prototype = {
 
         this.carregando = true;
         pool.getConnection(function (err, connection) {
-            console.log('gerando conexao: ' + connection);
             me.carregou(connection);
         });
     },
@@ -71,7 +68,9 @@ Contexto.prototype = {
     commit:function(callback){
         if(!this.conexao) return;
 
-        this.conexao.commit(function(err) {
+        var me = this;
+
+        me.conexao.commit(function(err) {
             if (err) {
 
                 me.conexao.rollback(function() {

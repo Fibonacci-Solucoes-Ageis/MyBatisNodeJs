@@ -366,27 +366,19 @@ var NoOtherwise = (function (_super) {
 })(No);
 exports.NoOtherwise = NoOtherwise;
 
-var NoPropriedadeId = (function () {
-    function NoPropriedadeId(nome, coluna) {
-        this.nome = nome;
-        this.coluna = coluna;
-    }
-    NoPropriedadeId.prototype.imprima = function () {
-        console.log('id(' + this.nome + " -> " + this.coluna + ')');
-    };
-    return NoPropriedadeId;
-})();
-exports.NoPropriedadeId = NoPropriedadeId;
-
 var NoPropriedade = (function () {
-    function NoPropriedade(nome, coluna) {
+    function NoPropriedade(nome, coluna,prefixo) {
         this.nome = nome;
         this.coluna = coluna;
+        this.prefixo = prefixo;
     }
     NoPropriedade.prototype.imprima = function () {
-        console.log(this.nome + " -> " + this.coluna);
+        console.log(this.nome + " -> " + this.obtenhaColuna());
     };
 
+    NoPropriedade.prototype.obtenhaColuna = function(prefixo){
+        return prefixo ? prefixo + this.coluna : this.coluna;
+    }
     NoPropriedade.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, objeto, registro, chavePai) {
         return null;
     };
@@ -394,15 +386,26 @@ var NoPropriedade = (function () {
 })();
 exports.NoPropriedade = NoPropriedade;
 
+
+var NoPropriedadeId = (function (_super) {
+    __extends(NoPropriedadeId, _super);
+    function NoPropriedadeId(nome, coluna) {
+        _super.call(this, nome, coluna);
+    }
+
+    return NoPropriedadeId;
+})(NoPropriedade);
+exports.NoPropriedadeId = NoPropriedadeId;
+
 var NoAssociacao = (function (_super) {
     __extends(NoAssociacao, _super);
-    function NoAssociacao(nome, coluna, resultMap) {
-        _super.call(this, nome, coluna);
+    function NoAssociacao(nome, coluna, columnPrefix,resultMap) {
+        _super.call(this, nome, coluna,columnPrefix);
 
         this.resultMap = resultMap;
     }
     NoAssociacao.prototype.imprima = function () {
-        console.log('associacao(' + this.nome + ":" + this.coluna + " -> " + this.resultMap);
+        console.log('associacao(' + this.nome + ":" + this.obtenhaColuna(this.prefixo) + " -> " + this.resultMap);
     };
 
     NoAssociacao.prototype.obtenhaNomeCompleto = function() {
@@ -421,7 +424,7 @@ var NoAssociacao = (function (_super) {
 
         var objetoConhecido = cacheDeObjetos[chaveCombinada] != null;
 
-        var objetoColecao = no.crieObjeto(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, registro, chavePai);
+        var objetoColecao = no.crieObjeto(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, registro, chavePai,this.prefixo);
 
         if (objetoColecao == null || objetoConhecido == true)
             return;
@@ -435,7 +438,7 @@ exports.NoAssociacao = NoAssociacao;
 var NoPropriedadeColecao = (function (_super) {
     __extends(NoPropriedadeColecao, _super);
 
-    function NoPropriedadeColecao(nome, coluna, resultMap, ofType, tipoJava) {
+    function NoPropriedadeColecao(nome, coluna,prefixo, resultMap, ofType, tipoJava) {
         _super.call(this, nome, coluna);
 
         this.resultMap = resultMap;
@@ -500,7 +503,7 @@ var NoResultMap = (function (_super) {
 
         if(!encontrou) return;
 
-        this.definaPropriedadeId(new NoPropriedadeId(propriedade.nome, propriedade.coluna));
+        this.definaPropriedadeId(new NoPropriedadeId(propriedade.nome, propriedade.obtenhaColuna()));
         this.propriedades.splice(i, 1);
     };
 
@@ -551,7 +554,7 @@ var NoResultMap = (function (_super) {
         for (var i in this.propriedadesId) {
             var propriedade = this.propriedadesId[i];
 
-            var valor = registro[propriedade.coluna];
+            var valor = registro[propriedade.obtenhaColuna()];
 
             if (valor != null) {
                 pedacoObjeto += valor;
@@ -592,7 +595,7 @@ var NoResultMap = (function (_super) {
         return objetos;
     };
 
-    NoResultMap.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, registro, chavePai) {
+    NoResultMap.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, registro, chavePai,prefixo) {
         var chaveObjeto = this.obtenhaChave(registro, chavePai);
         var chaveCombinada = this.obtenhaChaveCombinada(chavePai, chaveObjeto);
 
@@ -627,7 +630,7 @@ var NoResultMap = (function (_super) {
 
             var encontrouValores = false;
 
-            encontrouValores = this.atribuaPropriedadesSimples(instance, registro);
+            encontrouValores = this.atribuaPropriedadesSimples(instance, registro,prefixo);
             encontrouValores = this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada) || encontrouValores;
 
             if (chaveCombinada && encontrouValores)
@@ -661,12 +664,12 @@ var NoResultMap = (function (_super) {
         return encontrouValor;
     };
 
-    NoResultMap.prototype.atribuaPropriedadesSimples = function (instance, registro) {
+    NoResultMap.prototype.atribuaPropriedadesSimples = function (instance,registro,prefixo) {
         var encontrouValores = false;
         for (var j in this.propriedadesId) {
             var propId = this.propriedadesId[j];
 
-            var valor = registro[propId.coluna];
+            var valor = registro[propId.obtenhaColuna(prefixo)];
 
             if (valor instanceof Buffer) {
                 if (valor.length == 1) {
@@ -693,7 +696,7 @@ var NoResultMap = (function (_super) {
                 continue;
             }
 
-            var valor = registro[propriedade.coluna];
+            var valor = registro[propriedade.obtenhaColuna(prefixo)];
 
             if (valor instanceof Buffer) {
                 if (valor.length == 1) {
@@ -788,7 +791,12 @@ var Principal = (function () {
             resultMap = noResultMap.mapeamento.nome + "." + resultMap;
         }
 
-        noResultMap.adicione(new NoAssociacao(no.getAttributeNode('property').value, valorColuna, resultMap));
+        var columnPrefix = null;
+
+        if(no.getAttributeNode('columnPrefix'))
+            columnPrefix = no.getAttributeNode('columnPrefix').value;
+
+        noResultMap.adicione(new NoAssociacao(no.getAttributeNode('property').value, valorColuna,columnPrefix, resultMap));
     };
 
     Principal.prototype.leiaCollectionProperty = function (no, noResultMap) {
@@ -812,7 +820,12 @@ var Principal = (function () {
         if (no.getAttributeNode('javaType'))
             valorTipoJava = no.getAttributeNode('javaType').value;
 
-        noResultMap.adicione(new NoPropriedadeColecao(no.getAttributeNode('property').value, valorColuna, valorResultMap, valorOfType, valorTipoJava));
+        var columnPrefix = null;
+
+        if(no.getAttributeNode('columnPrefix'))
+            columnPrefix = no.getAttributeNode('columnPrefix').value;
+
+        noResultMap.adicione(new NoPropriedadeColecao(no.getAttributeNode('property').value, valorColuna, columnPrefix,valorResultMap, valorOfType, valorTipoJava));
     };
 
     Principal.prototype.leiaResultProperty = function (no, noResultMap) {
@@ -1098,7 +1111,11 @@ var GerenciadorDeMapeamentos = (function () {
         if (mapeamento == null) {
             throw new Error("Mapeamento " + nomeNamespace + " não encontrado");
         }
-        return mapeamento.obtenhaResultMap(nomeResultMap);
+
+        var resultMap = mapeamento.obtenhaResultMap(nomeResultMap);
+
+        return resultMap;
+
     };
 
     GerenciadorDeMapeamentos.prototype.obtenhaNo = function (nomeCompletoResultMap) {
@@ -1132,6 +1149,7 @@ var GerenciadorDeMapeamentos = (function () {
                 }
 
                 if (callback) {
+                    console.log('callback insert...')
                     callback();
                 }
             }));
@@ -1150,7 +1168,6 @@ var GerenciadorDeMapeamentos = (function () {
 
         var dominio = require('domain').active;
 
-        console.log(sql)
         this.conexao(function(connection) {
             connection.query(comandoSql.sql, comandoSql.parametros,dominio.intercept(function (rows, fields,err)  {
                 if (err)
@@ -1274,6 +1291,7 @@ var GerenciadorDeMapeamentos = (function () {
     };
 
     GerenciadorDeMapeamentos.prototype.conexao=function(callback){
+        this.contexto()
         return this.contexto().obtenhaConexao(callback);
     }
 
