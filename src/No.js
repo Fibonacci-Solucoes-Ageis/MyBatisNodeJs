@@ -6,6 +6,7 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 var fs = require('fs');
+var path =  require('path');
 
 var vm = require('vm');
 var util = require('util');
@@ -1019,20 +1020,54 @@ var Principal = (function () {
 
         var gerenciadorDeMapeamentos = new GerenciadorDeMapeamentos();
 
-        var arquivos = fs.readdirSync("./domain");
+
         var models = {};
 
-        for (var i in arquivos) {
-            var arquivo = arquivos[i];
+        var walk = function(dir, done) {
+            var results = [];
+            var list = fs.readdirSync(dir) ;
+            var pending = list.length;
+            if (!pending) return done(null, results);
+            list.forEach(function(file) {
+                var file = dir + '/' + file;
 
-            var nomeClasseDominio = arquivo.substring(0, arquivo.indexOf("."));
+                var stat = fs.statSync(file);
 
-            if( arquivo.indexOf(".js") == -1 ) continue;
+                if (stat && stat.isDirectory() && file.indexOf('.svn') ==-1) {
+                    walk(file, function(err, res) {
+                        results = results.concat(res);
+                        if (!--pending) done(null, results);
+                    });
+                } else {
+                    results.push(file);
+                    if (!--pending) done(null, results);
+                }
 
-            gerenciadorDeMapeamentos.adicioneModel(nomeClasseDominio, require("../../../domain/" + nomeClasseDominio));
-        }
 
-        arquivos = fs.readdirSync(dir_xml);
+            });
+        };
+
+
+        var ext = '.js'
+
+        walk("./domain",function(err, arquivos) {
+            for (var i in arquivos) {
+                var arquivo = arquivos[i];
+                if( arquivo.indexOf(ext) == -1 ) continue;
+
+                var nomeArquivo = path.basename(arquivo);
+                var nomeClasseDominio =  nomeArquivo.replace(ext,'');
+                var arquivoPath = path.join(path.resolve('.'),arquivo);
+
+                if(!fs.existsSync(arquivoPath)) throw new Error('Arquivo não encontrado:' + arquivoPath);
+
+                var model = require(path.join(path.resolve('.'),arquivo));
+
+                gerenciadorDeMapeamentos.adicioneModel(nomeClasseDominio,model);
+            }
+        });
+
+        var arquivos = fs.readdirSync(dir_xml);
         for (var i in arquivos) {
             var arquivo = arquivos[i];
 
@@ -1043,6 +1078,7 @@ var Principal = (function () {
 
         return gerenciadorDeMapeamentos;
     };
+
 
     Principal.prototype.processeArquivo = function (nomeArquivo) {
         if (fs.lstatSync(nomeArquivo).isDirectory())

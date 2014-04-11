@@ -76,8 +76,7 @@ Contexto.prototype = {
                 me.conexao.rollback(function() {
                     if(callback) callback(false);
                 });
-            }
-            if(callback) callback(true);
+            } else  if(callback) callback(true);
 
         });
     },
@@ -116,14 +115,19 @@ function domainMiddleware(req, res, next) {
     });
 
 
-    reqDomain.on('error', function (err) {
-        //reqDomain.dispose();
-        //reqDomain.contexto.release();
+    reqDomain.on('error', function (er) {
+        try {
+            console.error('Error', er, req.url);
+            if(req.xhr){
+                res.json({sucesso:false,mensagem:'Ops! alguma coisa saiu errada.'});
+            } else {
+                res.writeHead(500);
+                res.end('Ops! alguma coisa saiu errada.');
+            }
 
-        console.log(err.message);
-        throw err;
-        console.log(3);
-        //next(err);
+        } catch (er) {
+            console.error('Error sending 500', er, req.url);
+        }
     });
 
     reqDomain.run(next);
