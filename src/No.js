@@ -420,6 +420,8 @@ var NoAssociacao = (function (_super) {
     NoAssociacao.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, objeto, registro, chavePai) {
         var no = gerenciadorDeMapeamentos.obtenhaResultMap(this.resultMap);
 
+        if(!no) throw  new Error('Nenhum nó com nome foi encontrado: ' + this.resultMap);
+
         var chaveObjeto = no.obtenhaChave(registro, chavePai);
         var chaveCombinada = no.obtenhaChaveCombinada(chavePai, chaveObjeto);
 
@@ -612,7 +614,7 @@ var NoResultMap = (function (_super) {
 
             delete ancestorCache[chaveObjeto];
         } else {
-            var nomeModel = this.tipo.substring(this.tipo.lastIndexOf(".") + 1);
+            var nomeModel = this.obtenhaNomeModel(registro,prefixo);
 
             var model = gerenciadorDeMapeamentos.obtenhaModel(nomeModel);
 
@@ -647,6 +649,24 @@ var NoResultMap = (function (_super) {
         return instance;
     };
 
+    NoResultMap.prototype.obtenhaNomeModel = function(registro,prefixo){
+        var tipoNo;
+        if(!this.noDiscriminador){
+            tipoNo = this.tipo;
+        } else {
+
+            var valorTipo = registro[this.noDiscriminador.obtenhaColuna(prefixo)];
+
+            for(var i in this.noDiscriminador.cases){
+                if(this.noDiscriminador.cases[i].valor==valorTipo)
+                    tipoNo = this.noDiscriminador.cases[i].tipo;
+            }
+
+            if(!tipoNo) tipoNo = this.tipo;
+        }
+
+        return   tipoNo.substring(tipoNo.lastIndexOf(".") + 1);
+    };
     NoResultMap.prototype.processeColecoes = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveObjeto) {
         var encontrouValor = false;
 
@@ -741,6 +761,11 @@ var NoDiscriminator = (function () {
             noCase.imprima();
         }
     };
+
+    NoDiscriminator.prototype.obtenhaColuna = function(prefixo){
+        return prefixo ? prefixo + this.coluna : this.coluna;
+    }
+
     return NoDiscriminator;
 })();
 exports.NoDiscriminator = NoDiscriminator;

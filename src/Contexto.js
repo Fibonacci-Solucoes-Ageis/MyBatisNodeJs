@@ -70,15 +70,14 @@ Contexto.prototype = {
 
         var me = this;
 
-        me.conexao.commit(function(err) {
+        me.conexao.commit(dominio.intercept(function(result,err) {
             if (err) {
-
                 me.conexao.rollback(function() {
                     if(callback) callback(false);
                 });
             } else  if(callback) callback(true);
 
-        });
+        }));
     },
 
     roolback:function(){
@@ -118,6 +117,7 @@ function domainMiddleware(req, res, next) {
     reqDomain.on('error', function (er) {
         try {
             console.error('Error', er, req.url);
+            console.error('Error', er.stack);s
             if(req.xhr){
                 res.json({sucesso:false,mensagem:'Ops! alguma coisa saiu errada.'});
             } else {
