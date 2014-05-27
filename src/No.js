@@ -433,6 +433,8 @@ var NoAssociacao = (function (_super) {
             return;
 
         objeto[this.nome] = objetoColecao;
+
+
     };
     return NoAssociacao;
 })(NoPropriedade);
@@ -442,7 +444,7 @@ var NoPropriedadeColecao = (function (_super) {
     __extends(NoPropriedadeColecao, _super);
 
     function NoPropriedadeColecao(nome, coluna,prefixo, resultMap, ofType, tipoJava) {
-        _super.call(this, nome, coluna);
+        _super.call(this, nome, coluna,prefixo);
 
         this.resultMap = resultMap;
 
@@ -462,7 +464,7 @@ var NoPropriedadeColecao = (function (_super) {
 
         var objetoConhecido = cacheDeObjetos[chaveCombinada] != null;
 
-        var objetoColecao = no.crieObjeto(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, registro, chavePai);
+        var objetoColecao = no.crieObjeto(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, registro, chavePai,this.prefixo);
 
         if (objeto[this.nome] == null) {
             objeto[this.nome] = [];
