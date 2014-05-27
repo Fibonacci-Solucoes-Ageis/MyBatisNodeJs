@@ -636,8 +636,10 @@ var NoResultMap = (function (_super) {
             encontrouValores = this.atribuaPropriedadesSimples(instance, registro,prefixo);
             encontrouValores = this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada) || encontrouValores;
 
-            if (chaveCombinada && encontrouValores && instance.id != null)
+            if (chaveCombinada && encontrouValores && instance.id != null && chaveCombinada.indexOf('null') < 0){
                 cacheDeObjetos[chaveCombinada] = instance;
+
+            }
 
             delete ancestorCache[chaveObjeto];
 
