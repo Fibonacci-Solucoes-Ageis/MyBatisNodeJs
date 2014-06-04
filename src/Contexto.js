@@ -70,6 +70,8 @@ Contexto.prototype = {
 
         var me = this;
 
+        var dominio = require('domain').active;
+
         me.conexao.commit(dominio.intercept(function(result,err) {
             if (err) {
                 me.conexao.rollback(function() {
