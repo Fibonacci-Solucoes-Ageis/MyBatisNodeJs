@@ -118,18 +118,20 @@ function domainMiddleware(req, res, next) {
 
     reqDomain.on('error', function (er) {
         try {
-            console.error('Error', er, req.url);
-            console.error('Error', er.stack);s
+            //  console.error('Error', er, req.url);
+            // console.error('Error', er.stack);
             if(req.xhr){
                 res.json({sucesso:false,mensagem:'Ops! alguma coisa saiu errada.'});
             } else {
                 res.writeHead(500);
-                res.end('Ops! alguma coisa saiu errada.');
+                res.send('Ops! alguma coisa saiu errada.');
             }
 
         } catch (er) {
             console.error('Error sending 500', er, req.url);
         }
+
+        throw er;
     });
 
     reqDomain.run(next);
