@@ -120,6 +120,9 @@ function domainMiddleware(req, res, next) {
         try {
             //  console.error('Error', er, req.url);
             // console.error('Error', er.stack);
+            if(reqDomain.contexto )
+                reqDomain.contexto.release();
+
             if(req.xhr){
                 res.json({sucesso:false,mensagem:'Ops! alguma coisa saiu errada.'});
             } else {
