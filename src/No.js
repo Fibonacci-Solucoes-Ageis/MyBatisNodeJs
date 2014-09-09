@@ -550,10 +550,6 @@ var NoResultMap = (function (_super) {
     NoResultMap.prototype.obtenhaChave = function (registro, chavePai) {
         var chave = this.obtenhaNomeCompleto() + ":";
 
-        if( registro == null ) {
-            console.log(2);
-        }
-
         var pedacoObjeto = '';
 
         for (var i in this.propriedadesId) {
@@ -1201,8 +1197,8 @@ var GerenciadorDeMapeamentos = (function () {
 
         no.obtenhaSql(comandoSql, objeto);
 
-        console.log(comandoSql.sql);
-        console.log(comandoSql.parametros);
+        //console.log(comandoSql.sql);
+       // console.log(comandoSql.parametros);
 
         var dominio = require('domain').active;
 
@@ -1214,7 +1210,7 @@ var GerenciadorDeMapeamentos = (function () {
                 }
 
                 if (callback) {
-                    console.log('callback insert...')
+                    //console.log('callback insert...')
                     callback();
                 }
             }));
@@ -1229,7 +1225,7 @@ var GerenciadorDeMapeamentos = (function () {
         var comandoSql = new ComandoSql();
         var sql = no.obtenhaSql(comandoSql, objeto);
 
-        console.log(sql);
+        //console.log(sql);
 
         var dominio = require('domain').active;
 
@@ -1274,7 +1270,7 @@ var GerenciadorDeMapeamentos = (function () {
     };
 
     GerenciadorDeMapeamentos.prototype.selecioneUm = function (nomeCompleto, dados, callback) {
-        console.log('buscando ' + nomeCompleto);
+       // console.log('buscando ' + nomeCompleto);
         this.selecioneVarios(nomeCompleto, dados, function (objetos) {
             if (objetos.length == 0)
                 return callback(null);
@@ -1310,8 +1306,8 @@ var GerenciadorDeMapeamentos = (function () {
 
         var dominio = require('domain').active;
         this.conexao(function(connection){
-            console.log(comandoSql.sql);
-            console.log(comandoSql.parametros);
+           // console.log(comandoSql.sql);
+            //console.log(comandoSql.parametros);
             connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
                 if (err) {
                     console.log(err.message);
