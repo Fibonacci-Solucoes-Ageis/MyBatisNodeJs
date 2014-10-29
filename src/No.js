@@ -600,8 +600,6 @@ var NoResultMap = (function (_super) {
         var chaveObjeto = this.obtenhaChave(registro, chavePai);
         var chaveCombinada = this.obtenhaChaveCombinada(chavePai, chaveObjeto);
 
-        if(!chaveObjeto) return null;
-
         if( ancestorCache[chaveObjeto] != null ) {
             return ancestorCache[chaveObjeto];
         }
@@ -615,7 +613,7 @@ var NoResultMap = (function (_super) {
             delete ancestorCache[chaveObjeto];
         } else {
             var nomeModel = this.obtenhaNomeModel(registro,prefixo),
-                idChave = chaveObjeto.split(':')[1];
+                idChave = chaveObjeto && chaveObjeto.split(':')[1];
 
             var model = gerenciadorDeMapeamentos.obtenhaModel(nomeModel);
 
@@ -630,14 +628,15 @@ var NoResultMap = (function (_super) {
 
             var encontrouValores = false;
 
-            ancestorCache[chaveObjeto] = instance;
+            if(chaveObjeto)
+                ancestorCache[chaveObjeto] = instance;
 
             encontrouValores = this.atribuaPropriedadesSimples(instance, registro,prefixo);
             encontrouValores = this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada) || encontrouValores;
 
             delete ancestorCache[chaveObjeto];
 
-            if( idChave != instance.id.toString() || !encontrouValores)
+            if( !encontrouValores || (idChave && idChave != instance.id.toString()))
                 return null;
 
             if (chaveCombinada && encontrouValores && instance.id != null && chaveCombinada.indexOf('null') < 0)
