@@ -600,6 +600,8 @@ var NoResultMap = (function (_super) {
         var chaveObjeto = this.obtenhaChave(registro, chavePai);
         var chaveCombinada = this.obtenhaChaveCombinada(chavePai, chaveObjeto);
 
+        if(!chaveObjeto) return null;
+
         if( ancestorCache[chaveObjeto] != null ) {
             return ancestorCache[chaveObjeto];
         }
@@ -612,7 +614,8 @@ var NoResultMap = (function (_super) {
 
             delete ancestorCache[chaveObjeto];
         } else {
-            var nomeModel = this.obtenhaNomeModel(registro,prefixo);
+            var nomeModel = this.obtenhaNomeModel(registro,prefixo),
+                idChave = chaveObjeto.split(':')[1];
 
             var model = gerenciadorDeMapeamentos.obtenhaModel(nomeModel);
 
@@ -625,25 +628,21 @@ var NoResultMap = (function (_super) {
             var instance = Object.create(model.prototype);
             instance.constructor.apply(instance, []);
 
-            if( chaveObjeto ) {
-                ancestorCache[chaveObjeto] = instance;
-            }
-
             var encontrouValores = false;
+
+            ancestorCache[chaveObjeto] = instance;
 
             encontrouValores = this.atribuaPropriedadesSimples(instance, registro,prefixo);
             encontrouValores = this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada) || encontrouValores;
 
-            if (chaveCombinada && encontrouValores && instance.id != null && chaveCombinada.indexOf('null') < 0){
-                cacheDeObjetos[chaveCombinada] = instance;
-
-            }
-
             delete ancestorCache[chaveObjeto];
 
-            if (!encontrouValores) {
+            if( idChave != instance.id.toString() || !encontrouValores)
                 return null;
-            }
+
+            if (chaveCombinada && encontrouValores && instance.id != null && chaveCombinada.indexOf('null') < 0)
+                cacheDeObjetos[chaveCombinada] = instance;
+
         }
 
         return instance;
@@ -1310,6 +1309,7 @@ var GerenciadorDeMapeamentos = (function () {
             //console.log(comandoSql.parametros);
             connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
                 if (err) {
+                    console.log(err);
                     console.log(err.message);
                     throw err;
                 }
