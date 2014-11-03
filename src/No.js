@@ -636,7 +636,7 @@ var NoResultMap = (function (_super) {
 
             delete ancestorCache[chaveObjeto];
 
-            if( !encontrouValores || (idChave && idChave != instance.id.toString()))
+            if( !encontrouValores || (idChave &&  instance.id && idChave != instance.id.toString()))
                 return null;
 
             if (chaveCombinada && encontrouValores && instance.id != null && chaveCombinada.indexOf('null') < 0)
