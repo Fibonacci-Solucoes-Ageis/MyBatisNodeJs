@@ -422,7 +422,7 @@ var NoAssociacao = (function (_super) {
 
         if(!no) throw  new Error('Nenhum nó com nome foi encontrado: ' + this.resultMap);
 
-        var chaveObjeto = no.obtenhaChave(registro, chavePai);
+        var chaveObjeto = no.obtenhaChave(registro, chavePai,this.prefixo);
         var chaveCombinada = no.obtenhaChaveCombinada(chavePai, chaveObjeto);
 
         var objetoConhecido = cacheDeObjetos[chaveCombinada] != null;
@@ -459,7 +459,7 @@ var NoPropriedadeColecao = (function (_super) {
     NoPropriedadeColecao.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, objeto, registro, chavePai) {
         var no = gerenciadorDeMapeamentos.obtenhaResultMap(this.resultMap);
 
-        var chaveObjeto = no.obtenhaChave(registro, chavePai);
+        var chaveObjeto = no.obtenhaChave(registro, chavePai,this.prefixo);
         var chaveCombinada = chavePai + ":" + chaveObjeto;
 
         var objetoConhecido = cacheDeObjetos[chaveCombinada] != null;
@@ -547,7 +547,7 @@ var NoResultMap = (function (_super) {
         return chaveCombinada;
     }
 
-    NoResultMap.prototype.obtenhaChave = function (registro, chavePai) {
+    NoResultMap.prototype.obtenhaChave = function (registro, chavePai,prefixo) {
         var chave = this.obtenhaNomeCompleto() + ":";
 
         var pedacoObjeto = '';
@@ -555,7 +555,7 @@ var NoResultMap = (function (_super) {
         for (var i in this.propriedadesId) {
             var propriedade = this.propriedadesId[i];
 
-            var valor = registro[propriedade.obtenhaColuna()];
+            var valor = registro[propriedade.obtenhaColuna(prefixo)];
 
             if (valor != null) {
                 pedacoObjeto += valor;
@@ -597,7 +597,7 @@ var NoResultMap = (function (_super) {
     };
 
     NoResultMap.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, registro, chavePai,prefixo) {
-        var chaveObjeto = this.obtenhaChave(registro, chavePai);
+        var chaveObjeto = this.obtenhaChave(registro, chavePai,prefixo);
         var chaveCombinada = this.obtenhaChaveCombinada(chavePai, chaveObjeto);
 
         if( ancestorCache[chaveObjeto] != null ) {
@@ -1196,7 +1196,7 @@ var GerenciadorDeMapeamentos = (function () {
         no.obtenhaSql(comandoSql, objeto);
 
         //console.log(comandoSql.sql);
-       // console.log(comandoSql.parametros);
+        // console.log(comandoSql.parametros);
 
         var dominio = require('domain').active;
 
@@ -1268,7 +1268,7 @@ var GerenciadorDeMapeamentos = (function () {
     };
 
     GerenciadorDeMapeamentos.prototype.selecioneUm = function (nomeCompleto, dados, callback) {
-       // console.log('buscando ' + nomeCompleto);
+        // console.log('buscando ' + nomeCompleto);
         this.selecioneVarios(nomeCompleto, dados, function (objetos) {
             if (objetos.length == 0)
                 return callback(null);
@@ -1304,7 +1304,7 @@ var GerenciadorDeMapeamentos = (function () {
 
         var dominio = require('domain').active;
         this.conexao(function(connection){
-           // console.log(comandoSql.sql);
+            // console.log(comandoSql.sql);
             //console.log(comandoSql.parametros);
             connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
                 if (err) {
