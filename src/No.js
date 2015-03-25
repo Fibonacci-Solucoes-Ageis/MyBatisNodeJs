@@ -600,6 +600,10 @@ var NoResultMap = (function (_super) {
         var chaveObjeto = this.obtenhaChave(registro, chavePai,prefixo);
         var chaveCombinada = this.obtenhaChaveCombinada(chavePai, chaveObjeto);
 
+        if( chaveObjeto == null ) {
+            return;
+        }
+
         if( ancestorCache[chaveObjeto] != null ) {
             return ancestorCache[chaveObjeto];
         }
