@@ -600,10 +600,6 @@ var NoResultMap = (function (_super) {
         var chaveObjeto = this.obtenhaChave(registro, chavePai,prefixo);
         var chaveCombinada = this.obtenhaChaveCombinada(chavePai, chaveObjeto);
 
-        if( chaveObjeto == null ) {
-            return;
-        }
-
         if( ancestorCache[chaveObjeto] != null ) {
             return ancestorCache[chaveObjeto];
         }
@@ -636,7 +632,9 @@ var NoResultMap = (function (_super) {
                 ancestorCache[chaveObjeto] = instance;
 
             encontrouValores = this.atribuaPropriedadesSimples(instance, registro,prefixo);
-            encontrouValores = this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada) || encontrouValores;
+            if( chaveObjeto != null ) {
+                encontrouValores = this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada) || encontrouValores;
+            }
 
             delete ancestorCache[chaveObjeto];
 
