@@ -1,4 +1,6 @@
-var dir_xml = '';
+var dir_xml = '',
+    separador = ':::';
+
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -406,7 +408,7 @@ var NoAssociacao = (function (_super) {
         this.resultMap = resultMap;
     }
     NoAssociacao.prototype.imprima = function () {
-        console.log('associacao(' + this.nome + ":" + this.obtenhaColuna(this.prefixo) + " -> " + this.resultMap);
+        console.log('associacao(' + this.nome + separador + this.obtenhaColuna(this.prefixo) + " -> " + this.resultMap);
     };
 
     NoAssociacao.prototype.obtenhaNomeCompleto = function() {
@@ -453,14 +455,14 @@ var NoPropriedadeColecao = (function (_super) {
     }
 
     NoPropriedadeColecao.prototype.imprima = function () {
-        console.log('colecao(' + this.nome + ":" + this.coluna + " -> " + this.resultMap);
+        console.log('colecao(' + this.nome + separador + this.coluna + " -> " + this.resultMap);
     };
 
     NoPropriedadeColecao.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, objeto, registro, chavePai) {
         var no = gerenciadorDeMapeamentos.obtenhaResultMap(this.resultMap);
 
         var chaveObjeto = no.obtenhaChave(registro, chavePai,this.prefixo);
-        var chaveCombinada = chavePai + ":" + chaveObjeto;
+        var chaveCombinada = chavePai + separador + chaveObjeto;
 
         var objetoConhecido = cacheDeObjetos[chaveCombinada] != null;
 
@@ -541,14 +543,14 @@ var NoResultMap = (function (_super) {
         var chaveCombinada = chave;
 
         if( chavePai ) {
-            chaveCombinada = chavePai + ":" + chave;
+            chaveCombinada = chavePai + separador + chave;
         }
 
         return chaveCombinada;
     }
 
     NoResultMap.prototype.obtenhaChave = function (registro, chavePai,prefixo) {
-        var chave = this.obtenhaNomeCompleto() + ":";
+        var chave = this.obtenhaNomeCompleto() + separador;
 
         var pedacoObjeto = '';
 
@@ -613,7 +615,7 @@ var NoResultMap = (function (_super) {
             delete ancestorCache[chaveObjeto];
         } else {
             var nomeModel = this.obtenhaNomeModel(registro,prefixo),
-                idChave = chaveObjeto && chaveObjeto.split(':')[1];
+                idChave = chaveObjeto && chaveObjeto.split(separador)[1];
 
             var model = gerenciadorDeMapeamentos.obtenhaModel(nomeModel);
 
@@ -1306,7 +1308,7 @@ var GerenciadorDeMapeamentos = (function () {
 
         var dominio = require('domain').active;
         this.conexao(function(connection){
-            // console.log(comandoSql.sql);
+            //console.log(comandoSql.sql);
             //console.log(comandoSql.parametros);
             connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
                 if (err) {
