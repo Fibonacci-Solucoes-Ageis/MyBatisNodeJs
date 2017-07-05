@@ -458,19 +458,19 @@ var NoPropriedadeColecao = (function (_super) {
         console.log('colecao(' + this.nome + separador + this.coluna + " -> " + this.resultMap);
     };
 
-    NoPropriedadeColecao.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, objeto, registro, chavePai) {
+    NoPropriedadeColecao.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, objeto, registro, chavePai,prefixo) {
         var no = gerenciadorDeMapeamentos.obtenhaResultMap(this.resultMap);
 
-        var chaveObjeto = no.obtenhaChave(registro, chavePai,this.prefixo);
+        var chaveObjeto = no.obtenhaChave(registro, chavePai,(this.prefixo || prefixo));
         var chaveCombinada = chavePai + separador + chaveObjeto;
 
         var objetoConhecido = cacheDeObjetos[chaveCombinada] != null;
 
-        var objetoColecao = no.crieObjeto(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, registro, chavePai,this.prefixo);
+        var objetoColecao = no.crieObjeto(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, registro, chavePai,(this.prefixo || prefixo));
 
-        if (objeto[this.nome] == null) {
+        if (objeto[this.nome] == null)
             objeto[this.nome] = [];
-        }
+
 
         if (objetoColecao == null || objetoConhecido == true)
             return;
@@ -610,7 +610,7 @@ var NoResultMap = (function (_super) {
 
             ancestorCache[chaveObjeto] = instance;
 
-            this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada);
+            this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada,prefixo);
 
             delete ancestorCache[chaveObjeto];
         } else {
@@ -635,7 +635,7 @@ var NoResultMap = (function (_super) {
 
             encontrouValores = this.atribuaPropriedadesSimples(instance, registro,prefixo);
             if( chaveObjeto != null ) {
-                encontrouValores = this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada) || encontrouValores;
+                encontrouValores = this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada,prefixo) || encontrouValores;
             }
 
             delete ancestorCache[chaveObjeto];
@@ -669,7 +669,7 @@ var NoResultMap = (function (_super) {
 
         return   tipoNo.substring(tipoNo.lastIndexOf(".") + 1);
     };
-    NoResultMap.prototype.processeColecoes = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveObjeto) {
+    NoResultMap.prototype.processeColecoes = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveObjeto,prefixo) {
         var encontrouValor = false;
 
         for (var i = 0; i < this.propriedades.length; i++) {
@@ -679,7 +679,7 @@ var NoResultMap = (function (_super) {
                 continue;
             }
 
-            var objeto = propriedade.crieObjeto(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveObjeto);
+            var objeto = propriedade.crieObjeto(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveObjeto,prefixo);
 
             encontrouValor = encontrouValor || (objeto != null);
         }
@@ -1075,9 +1075,10 @@ var Principal = (function () {
         };
 
 
-        var ext = '.js'
+        var ext =  global.domainExt || '.js',
+            diretorioDominio = global.domainDir || './domain';
 
-        walk("./domain",function(err, arquivos) {
+        walk(diretorioDominio,function(err, arquivos) {
             for (var i in arquivos) {
                 var arquivo = arquivos[i];
                 if( arquivo.indexOf(ext) == -1 ) continue;
