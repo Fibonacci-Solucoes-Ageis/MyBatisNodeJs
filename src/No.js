@@ -419,17 +419,17 @@ var NoAssociacao = (function (_super) {
         return this.resultMap;
     }
 
-    NoAssociacao.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, objeto, registro, chavePai) {
+    NoAssociacao.prototype.crieObjeto = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, objeto, registro, chavePai,prefixo) {
         var no = gerenciadorDeMapeamentos.obtenhaResultMap(this.resultMap);
 
         if(!no) throw  new Error('Nenhum nó com nome foi encontrado: ' + this.resultMap);
 
-        var chaveObjeto = no.obtenhaChave(registro, chavePai,this.prefixo);
+        var chaveObjeto = no.obtenhaChave(registro, chavePai,(this.prefixo || prefixo));
         var chaveCombinada = no.obtenhaChaveCombinada(chavePai, chaveObjeto);
 
         var objetoConhecido = cacheDeObjetos[chaveCombinada] != null;
 
-        var objetoColecao = no.crieObjeto(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, registro, chavePai,this.prefixo);
+        var objetoColecao = no.crieObjeto(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, registro, chavePai,(this.prefixo || prefixo));
 
         if (objetoColecao == null || objetoConhecido == true)
             return;
