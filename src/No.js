@@ -265,6 +265,9 @@ var NoForEach = (function (_super) {
                 } else if (typeof valorPropriedade == 'string') {
                     novaExpressao = novaExpressao.replace(trecho, '?');
                     comandoSql.adicioneParametro(valorPropriedade);
+                } else if (typeof valorPropriedade == 'boolean') {
+                    novaExpressao = novaExpressao.replace(trecho, '?');
+                    comandoSql.adicioneParametro(valorPropriedade);
                 }
             }
 
