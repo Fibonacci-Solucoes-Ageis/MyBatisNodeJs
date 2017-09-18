@@ -31,6 +31,8 @@ Contexto.prototype = {
 
         this.carregando = true;
         pool.getConnection(function (err, connection) {
+            if( err ) { console.log(err); }
+
             me.carregou(connection);
         });
     },
