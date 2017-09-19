@@ -105,8 +105,10 @@ function domainMiddleware(req, res, next) {
 
     res.on('close', function () {
         //reqDomain.dispose();
+        if( reqDomain.contexto ) {
+            reqDomain.contexto.release();
+        }
     });
-
 
     res.on('finish', function () {
         if( reqDomain.contexto ) {
