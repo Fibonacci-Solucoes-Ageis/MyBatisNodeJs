@@ -518,7 +518,10 @@ var NoResultMap = (function (_super) {
             }
         }
 
-        if(!encontrou) return;
+        if(!encontrou) {
+            console.log("Sem propriedade id: " + this.id);
+            return;
+        }
 
         this.definaPropriedadeId(new NoPropriedadeId(propriedade.nome, propriedade.obtenhaColuna()));
         this.propriedades.splice(i, 1);
@@ -612,6 +615,10 @@ var NoResultMap = (function (_super) {
         var chaveObjeto = this.obtenhaChave(registro, chavePai,prefixo);
         var chaveCombinada = this.obtenhaChaveCombinada(chavePai, chaveObjeto);
 
+        if( chaveObjeto == null && this.propriedadesId.length != 0 ) {
+            return null;
+        }
+
         if( ancestorCache[chaveObjeto] != null ) {
             return ancestorCache[chaveObjeto];
         }
@@ -621,6 +628,7 @@ var NoResultMap = (function (_super) {
             ancestorCache[chaveObjeto] = instance;
 
             this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada,prefixo);
+            this.processeAssociacoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada,prefixo);
 
             delete ancestorCache[chaveObjeto];
         } else {
@@ -644,6 +652,11 @@ var NoResultMap = (function (_super) {
                 ancestorCache[chaveObjeto] = instance;
 
             encontrouValores = this.atribuaPropriedadesSimples(instance, registro,prefixo);
+
+            if( chaveObjeto != null ) {
+                encontrouValores = this.processeAssociacoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada,prefixo) || encontrouValores;
+            }
+
             if( chaveObjeto != null ) {
                 encontrouValores = this.processeColecoes(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveCombinada,prefixo) || encontrouValores;
             }
@@ -1364,7 +1377,6 @@ var GerenciadorDeMapeamentos = (function () {
                     }
                 }
             }));
-
         })
 
 
