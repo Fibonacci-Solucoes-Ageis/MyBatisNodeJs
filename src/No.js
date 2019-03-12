@@ -650,8 +650,9 @@ var NoResultMap = (function (_super) {
 
             delete ancestorCache[chaveObjeto];
 
-            if( !encontrouValores || (idChave &&  instance.id && idChave != instance.id.toString()))
+            if( !encontrouValores || (idChave &&  instance.id && idChave != instance.id.toString())) {
                 return null;
+            }
 
             if (chaveCombinada && encontrouValores && instance.id != null && chaveCombinada.indexOf('null') < 0)
                 cacheDeObjetos[chaveCombinada] = instance;
@@ -679,13 +680,30 @@ var NoResultMap = (function (_super) {
 
         return   tipoNo.substring(tipoNo.lastIndexOf(".") + 1);
     };
+    NoResultMap.prototype.processeAssociacoes = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveObjeto,prefixo) {
+        var encontrouValor = false;
+
+        for (var i = 0; i < this.propriedades.length; i++) {
+            var propriedade = this.propriedades[i];
+
+            if( !(propriedade instanceof NoAssociacao)) {
+                continue;
+            }
+
+            var objeto = propriedade.crieObjeto(gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveObjeto,prefixo);
+
+            encontrouValor = encontrouValor || (objeto != null);
+        }
+
+        return encontrouValor;
+    };
     NoResultMap.prototype.processeColecoes = function (gerenciadorDeMapeamentos, cacheDeObjetos, ancestorCache, instance, registro, chaveObjeto,prefixo) {
         var encontrouValor = false;
 
         for (var i = 0; i < this.propriedades.length; i++) {
             var propriedade = this.propriedades[i];
 
-            if ((propriedade instanceof NoPropriedadeColecao) == false && (propriedade instanceof NoAssociacao) == false) {
+            if( !(propriedade instanceof NoPropriedadeColecao)) {
                 continue;
             }
 
