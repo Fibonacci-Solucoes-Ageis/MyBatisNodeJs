@@ -519,7 +519,7 @@ var NoResultMap = (function (_super) {
         }
 
         if(!encontrou) {
-            console.log("Sem propriedade id: " + this.id);
+            //console.log("Sem propriedade id: " + this.id);
             return;
         }
 
@@ -1357,6 +1357,10 @@ var GerenciadorDeMapeamentos = (function () {
                     console.log(err);
                     console.log(err.message);
                     throw err;
+                }
+
+                if( rows.length > 1000 ) {
+                    console.warn("Possível ponto de melhoria: " + nomeCompleto + " Trouxe: " + rows.length + " registros");
                 }
 
                 if (callback && noResultMap) {
