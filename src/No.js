@@ -1233,7 +1233,7 @@ var GerenciadorDeMapeamentos = (function () {
         return mapeamento.obtenhaNo(idNo);
     };
 
-    GerenciadorDeMapeamentos.prototype.insira = function (nomeCompleto, objeto, callback) {
+    GerenciadorDeMapeamentos.prototype.insira = function (nomeCompleto, objeto, callback, multicliente) {
         var me = this;
         var no = this.obtenhaNo(nomeCompleto);
 
@@ -1247,6 +1247,8 @@ var GerenciadorDeMapeamentos = (function () {
         var dominio = require('domain').active;
 
         this.conexao(function(connection){
+            if( me.antesDeExecutarAConsultaFn )
+                me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
             connection.query(comandoSql.sql,comandoSql.parametros,dominio.intercept(function (rows, fields,err) {
 
                 if( rows.insertId ) {
@@ -1262,7 +1264,7 @@ var GerenciadorDeMapeamentos = (function () {
 
     };
 
-    GerenciadorDeMapeamentos.prototype.atualize = function (nomeCompleto, objeto, callback) {
+    GerenciadorDeMapeamentos.prototype.atualize = function (nomeCompleto, objeto, callback, multicliente) {
         var me = this;
         var no = this.obtenhaNo(nomeCompleto);
 
@@ -1274,6 +1276,8 @@ var GerenciadorDeMapeamentos = (function () {
         var dominio = require('domain').active;
 
         this.conexao(function(connection) {
+            if( me.antesDeExecutarAConsultaFn )
+                me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
             connection.query(comandoSql.sql, comandoSql.parametros,dominio.intercept(function (rows, fields,err)  {
                 if (err)
                     throw err;
@@ -1288,7 +1292,7 @@ var GerenciadorDeMapeamentos = (function () {
 
     };
 
-    GerenciadorDeMapeamentos.prototype.remova = function (nomeCompleto, objeto, callback) {
+    GerenciadorDeMapeamentos.prototype.remova = function (nomeCompleto, objeto, callback, multicliente) {
         var me = this;
         var no = this.obtenhaNo(nomeCompleto);
 
@@ -1300,6 +1304,9 @@ var GerenciadorDeMapeamentos = (function () {
         console.log(sql);
 
         this.conexao(function(connection) {
+            if( me.antesDeExecutarAConsultaFn )
+                me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
+
             connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
                 if (err)
                     throw err;
@@ -1313,7 +1320,7 @@ var GerenciadorDeMapeamentos = (function () {
 
     };
 
-    GerenciadorDeMapeamentos.prototype.selecioneUm = function (nomeCompleto, dados, callback) {
+    GerenciadorDeMapeamentos.prototype.selecioneUm = function (nomeCompleto, dados, callback, multicliente) {
         // console.log('buscando ' + nomeCompleto);
         this.selecioneVarios(nomeCompleto, dados, function (objetos) {
             if (objetos.length == 0)
@@ -1324,10 +1331,10 @@ var GerenciadorDeMapeamentos = (function () {
             }
 
             callback(objetos[0]);
-        });
+        }, multicliente);
     };
 
-    GerenciadorDeMapeamentos.prototype.selecioneVarios = function (nomeCompleto, dados, callback) {
+    GerenciadorDeMapeamentos.prototype.selecioneVarios = function (nomeCompleto, dados, callback, multicliente) {
         var me = this;
         var no = this.obtenhaNo(nomeCompleto);
 
@@ -1353,7 +1360,8 @@ var GerenciadorDeMapeamentos = (function () {
             //console.log(comandoSql.sql);
             //console.log(comandoSql.parametros);
 
-            if( this.antesDeExecutarAConsultaFn ) this.antesDeExecutarAConsultaFn(comandoSql);
+            if( me.antesDeExecutarAConsultaFn )
+                me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
 
             connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
                 if (err) {
