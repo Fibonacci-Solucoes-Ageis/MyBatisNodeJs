@@ -1122,7 +1122,7 @@ var Principal = (function () {
         walk(diretorioDominio,function(err, arquivos) {
             for (var i in arquivos) {
                 var arquivo = arquivos[i];
-                if( arquivo.indexOf(ext) == -1 ) continue;
+                if( !arquivo.endsWith(ext) ) continue;
 
                 var nomeArquivo = path.basename(arquivo);
                 var nomeClasseDominio =  nomeArquivo.replace(ext,'');
@@ -1352,6 +1352,9 @@ var GerenciadorDeMapeamentos = (function () {
         this.conexao(function(connection){
             //console.log(comandoSql.sql);
             //console.log(comandoSql.parametros);
+
+            if( this.antesDeExecutarAConsultaFn ) this.antesDeExecutarAConsultaFn(comandoSql);
+
             connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
                 if (err) {
                     console.log(err);
