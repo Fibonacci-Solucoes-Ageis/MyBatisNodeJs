@@ -1234,167 +1234,228 @@ var GerenciadorDeMapeamentos = (function () {
     };
 
     GerenciadorDeMapeamentos.prototype.insira = function (nomeCompleto, objeto, callback, multicliente) {
-        var me = this;
-        var no = this.obtenhaNo(nomeCompleto);
-
-        var comandoSql = new ComandoSql();
-
-        no.obtenhaSql(comandoSql, objeto);
-
-        //console.log(comandoSql.sql);
-        // console.log(comandoSql.parametros);
-
-        var dominio = require('domain').active;
-
-        this.conexao(function(connection){
-            if( me.antesDeExecutarAConsultaFn )
-                me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
-            connection.query(comandoSql.sql,comandoSql.parametros,dominio.intercept(function (rows, fields,err) {
-
-                if( rows.insertId ) {
-                    objeto.id = rows.insertId;
-                }
-
-                if (callback) {
-                    //console.log('callback insert...')
-                    callback();
-                }
-            }));
+        this.insiraAsync(nomeCompleto, objeto, multicliente).then( (id) => {
+            if( callback ) {
+                callback();
+            }
+        }).catch( (erro) => {
+            if( callback ) {
+                callback();
+            }
         });
+    }
 
+    GerenciadorDeMapeamentos.prototype.insiraAsync = function (nomeCompleto, objeto, multicliente) {
+        return new Promise( (resolve, reject) => {
+            var me = this;
+            var no = this.obtenhaNo(nomeCompleto);
+
+            var comandoSql = new ComandoSql();
+
+            no.obtenhaSql(comandoSql, objeto);
+
+            //console.log(comandoSql.sql);
+            // console.log(comandoSql.parametros);
+
+            var dominio = require('domain').active;
+
+            this.conexao(function(connection){
+                if( me.antesDeExecutarAConsultaFn )
+                    me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
+                connection.query(comandoSql.sql,comandoSql.parametros,dominio.intercept(function (rows, fields,err) {
+                    if( err ) {
+                        return reject(err);
+                    }
+
+                    if( rows.insertId ) {
+                        objeto.id = rows.insertId;
+                    }
+
+                    resolve(objeto.id);
+                }));
+            });
+        });
     };
 
-    GerenciadorDeMapeamentos.prototype.atualize = function (nomeCompleto, objeto, callback, multicliente) {
-        var me = this;
-        var no = this.obtenhaNo(nomeCompleto);
-
-        var comandoSql = new ComandoSql();
-        var sql = no.obtenhaSql(comandoSql, objeto);
-
-        //console.log(sql);
-
-        var dominio = require('domain').active;
-
-        this.conexao(function(connection) {
-            if( me.antesDeExecutarAConsultaFn )
-                me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
-            connection.query(comandoSql.sql, comandoSql.parametros,dominio.intercept(function (rows, fields,err)  {
-                if (err)
-                    throw err;
-
-                if (callback) {
-                    callback(rows.affectedRows);
-                }
-
-            }));
+    GerenciadorDeMapeamentos.prototype.atualize = function (nomeCompleto, objeto, multicliente) {
+        this.atualizeAsync(nomeCompleto, objeto, multicliente).then( (id) => {
+            if( callback ) {
+                callback();
+            }
+        }).catch( (erro) => {
+            if( callback ) {
+                callback();
+            }
         });
+    };
 
+    GerenciadorDeMapeamentos.prototype.atualizeAsync = function (nomeCompleto, objeto, multicliente) {
+        return new Promise( (resolve, reject) => {
+            var me = this;
+            var no = this.obtenhaNo(nomeCompleto);
 
+            var comandoSql = new ComandoSql();
+            var sql = no.obtenhaSql(comandoSql, objeto);
+
+            //console.log(sql);
+
+            var dominio = require('domain').active;
+
+            this.conexao(function (connection) {
+                if (me.antesDeExecutarAConsultaFn)
+                    me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
+                connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields, err) {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(rows.affectedRows);
+                }));
+            });
+        });
     };
 
     GerenciadorDeMapeamentos.prototype.remova = function (nomeCompleto, objeto, callback, multicliente) {
-        var me = this;
-        var no = this.obtenhaNo(nomeCompleto);
-
-        var comandoSql = new ComandoSql();
-        var sql = no.obtenhaSql(comandoSql, objeto);
-
-        var dominio = require('domain').active;
-
-        console.log(sql);
-
-        this.conexao(function(connection) {
-            if( me.antesDeExecutarAConsultaFn )
-                me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
-
-            connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
-                if (err)
-                    throw err;
-
-                if (callback) {
-                    callback(rows.affectedRows);
-                }
-            }));
+        this.removaAsync(nomeCompleto, objeto, multicliente).then( (id) => {
+            if( callback ) {
+                callback();
+            }
+        }).catch( (erro) => {
+            if( callback ) {
+                callback();
+            }
         });
+    }
 
+    GerenciadorDeMapeamentos.prototype.removaAsync = function (nomeCompleto, objeto, multicliente) {
+        return new Promise( (resolve, reject) => {
+            var me = this;
+            var no = this.obtenhaNo(nomeCompleto);
 
+            var comandoSql = new ComandoSql();
+            var sql = no.obtenhaSql(comandoSql, objeto);
+
+            var dominio = require('domain').active;
+
+            console.log(sql);
+
+            this.conexao(function(connection) {
+                if( me.antesDeExecutarAConsultaFn )
+                    me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
+
+                connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
+                    if (err) {
+                        return throw err;
+                    }
+
+                    resolve(rows.affectedRows);
+                }));
+            });
+        });
     };
 
-    GerenciadorDeMapeamentos.prototype.selecioneUm = function (nomeCompleto, dados, callback, multicliente) {
-        // console.log('buscando ' + nomeCompleto);
-        this.selecioneVarios(nomeCompleto, dados, function (objetos) {
-            if (objetos.length == 0)
-                return callback(null);
-
-            if (objetos.length > 1) {
-                return callback(null);
+    GerenciadorDeMapeamentos.prototype.selecioneUm = function (nomeCompleto, objeto, callback, multicliente) {
+        this.selecioneUmAsync(nomeCompleto, dados, multicliente).then( (objeto) => {
+            if( callback ) {
+                callback(objeto);
             }
+        }).catch( (erro) => {
+            if( callback ) {
+                callback(erro);
+            }
+        });
+    }
 
-            callback(objetos[0]);
-        }, multicliente);
+    GerenciadorDeMapeamentos.prototype.selecioneUmAsync = function (nomeCompleto, dados, multicliente) {
+        return new Promise( (resolve, reject) => {
+            // console.log('buscando ' + nomeCompleto);
+            this.selecioneVarios(nomeCompleto, dados, function (objetos) {
+                if (objetos.length == 0)
+                    return resolve(null);
+
+                if (objetos.length > 1) {
+                    return resolve(null);
+                }
+
+                resolve(objetos[0]);
+            }, multicliente);
+        });
     };
 
     GerenciadorDeMapeamentos.prototype.selecioneVarios = function (nomeCompleto, dados, callback, multicliente) {
-        var me = this;
-        var no = this.obtenhaNo(nomeCompleto);
+        this.selecioneVariosAsync(nomeCompleto, dados, multicliente).then( (objetos) => {
+            if( callback ) {
+                callback(objetos);
+            }
+        }).catch( (erro) => {
+            if( callback ) {
+                callback(null);
+            }
+        });;
+    }
 
-        var comandoSql = new ComandoSql();
+    GerenciadorDeMapeamentos.prototype.selecioneVariosAsync = function (nomeCompleto, dados, multicliente) {
+        return new Promise( (resolve, reject) => {
+            var me = this;
+            var no = this.obtenhaNo(nomeCompleto);
 
-        no.obtenhaSql(comandoSql, dados);
+            var comandoSql = new ComandoSql();
 
-        var nomeResultMap = no.resultMap;
+            no.obtenhaSql(comandoSql, dados);
 
-        if (no.resultMap.indexOf(".") == -1) {
-            nomeResultMap = no.mapeamento.nome + "." + no.resultMap;
-        }
+            var nomeResultMap = no.resultMap;
 
-        var noResultMap = this.obtenhaResultMap(nomeResultMap);
+            if (no.resultMap.indexOf(".") == -1) {
+                nomeResultMap = no.mapeamento.nome + "." + no.resultMap;
+            }
 
-        if (no.resultMap && noResultMap == null) {
-            throw new Error("Result map '" + no.resultMap + "' não encontrado");
-        }
+            var noResultMap = this.obtenhaResultMap(nomeResultMap);
 
+            if (no.resultMap && noResultMap == null) {
+                throw new Error("Result map '" + no.resultMap + "' não encontrado");
+            }
 
-        var dominio = require('domain').active;
-        this.conexao(function(connection){
-            //console.log(comandoSql.sql);
-            //console.log(comandoSql.parametros);
+            var dominio = require('domain').active;
+            this.conexao(function(connection){
+                //console.log(comandoSql.sql);
+                //console.log(comandoSql.parametros);
 
-            if( me.antesDeExecutarAConsultaFn )
-                me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
+                if( me.antesDeExecutarAConsultaFn )
+                    me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
 
-            connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
-                if (err) {
-                    console.log(err);
-                    console.log(err.message);
-                    throw err;
-                }
-
-                if( rows.length > 1000 ) {
-                    console.warn("Possível ponto de melhoria: " + nomeCompleto + " Trouxe: " + rows.length + " registros");
-                }
-
-                if (callback && noResultMap) {
-                    callback(noResultMap.crieObjetos(me, rows));
-                } else {
-                    if (no.javaType == 'String' || no.javaType == 'int' || no.javaType == 'long' || no.javaType == 'java.lang.Long') {
-                        var objetos = [];
-                        for (var i in rows) {
-                            var row = rows[i];
-
-                            for (var j in row) {
-                                objetos.push(row[j]);
-                                break;
-                            }
-                        }
-
-                        callback(objetos);
+                connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
+                    if (err) {
+                        console.log(err);
+                        console.log(err.message);
+                        reject(err);
                     }
-                }
-            }));
-        })
 
+                    if( rows.length > 1000 ) {
+                        console.warn("Possível ponto de melhoria: " + nomeCompleto + " Trouxe: " + rows.length + " registros");
+                    }
 
+                    if (noResultMap) {
+                        var objetos = noResultMap.crieObjetos(me, rows);
+                        resolve(objetos);
+                    } else {
+                        if (no.javaType == 'String' || no.javaType == 'int' || no.javaType == 'long' || no.javaType == 'java.lang.Long') {
+                            var objetos = [];
+
+                            for (var i in rows) {
+                                var row = rows[i];
+
+                                for (var j in row) {
+                                    objetos.push(row[j]);
+                                    break;
+                                }
+                            }
+
+                            resolve(objetos);
+                        }
+                    }
+                }));
+            });
+        });
     };
 
     GerenciadorDeMapeamentos.prototype.crie = function () {
