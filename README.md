@@ -56,3 +56,9 @@ sessionFactory.selecioneUm('user.select', {id: 1}, pool, function(user) {
 ```
 
 The callback function is called with the user or null if not found.
+
+Added support to Promises. The same old methods with Async suffix.
+
+```javascript
+var user = await sessionFactory.selecioneUmAsync('user.select', {id: 1}, pool);
+```

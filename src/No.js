@@ -643,8 +643,14 @@ var NoResultMap = (function (_super) {
                 throw new Error("Classe " + nomeModel + "." + nomeModel + " não encontrada");
             }
 
-            var instance = Object.create(model.prototype);
-            instance.constructor.apply(instance, []);
+            var instance = null;
+
+            if (global.es7) {
+                instance = new model();
+            } else {
+                instance = Object.create(model.prototype);
+                instance.constructor.apply(instance, []);
+            }
 
             var encontrouValores = false;
 
@@ -1345,7 +1351,7 @@ var GerenciadorDeMapeamentos = (function () {
 
                 connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
                     if (err) {
-                        return throw err;
+                        return reject(err);
                     }
 
                     resolve(rows.affectedRows);
@@ -1354,7 +1360,7 @@ var GerenciadorDeMapeamentos = (function () {
         });
     };
 
-    GerenciadorDeMapeamentos.prototype.selecioneUm = function (nomeCompleto, objeto, callback, multicliente) {
+    GerenciadorDeMapeamentos.prototype.selecioneUm = function (nomeCompleto, dados, callback, multicliente) {
         this.selecioneUmAsync(nomeCompleto, dados, multicliente).then( (objeto) => {
             if( callback ) {
                 callback(objeto);
