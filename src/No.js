@@ -14,8 +14,12 @@ var vm = require('vm');
 var util = require('util');
 var moment = require('moment');
 var DOMParser = require('xmldom').DOMParser;
-var S = require('string');
 var Contexto = require('./Contexto');
+
+String.prototype.replaceAll = function(search, replacement) {
+    var target = this;
+    return target.split(search).join(replacement);
+};
 
 function ComandoSql() {
     this.sql = '';
@@ -208,7 +212,7 @@ var NoWhen = (function (_super) {
             this.expressaoTeste = this.expressaoTeste.replace(identificador, "dados." + identificador);
         }
 
-        this.expressaoTeste = S(this.expressaoTeste).replaceAll('and', '&&').toString();
+        this.expressaoTeste = this.expressaoTeste.replaceAll('and', '&&').toString();
     }
 
     NoWhen.prototype.imprima = function () {
