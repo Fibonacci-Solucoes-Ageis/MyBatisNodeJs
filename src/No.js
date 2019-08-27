@@ -1287,7 +1287,7 @@ var GerenciadorDeMapeamentos = (function () {
         });
     };
 
-    GerenciadorDeMapeamentos.prototype.atualize = function (nomeCompleto, objeto, multicliente) {
+    GerenciadorDeMapeamentos.prototype.atualize = function (nomeCompleto, objeto, callback, multicliente) {
         this.atualizeAsync(nomeCompleto, objeto, multicliente).then( (id) => {
             if( callback ) {
                 callback();
