@@ -1380,6 +1380,10 @@ var GerenciadorDeMapeamentos = (function () {
         return new Promise( (resolve, reject) => {
             // console.log('buscando ' + nomeCompleto);
             this.selecioneVarios(nomeCompleto, dados, function (objetos) {
+                if( objetos instanceof Error ) {
+                    return reject(objetos);
+                }
+
                 if (objetos.length == 0)
                     return resolve(null);
 
@@ -1399,7 +1403,7 @@ var GerenciadorDeMapeamentos = (function () {
             }
         }).catch( (erro) => {
             if( callback ) {
-                callback(null);
+                callback(erro);
             }
         });;
     }
@@ -1437,7 +1441,7 @@ var GerenciadorDeMapeamentos = (function () {
                     if (err) {
                         console.log(err);
                         console.log(err.message);
-                        reject(err);
+                        return reject(err);
                     }
 
                     if( rows.length > 1000 ) {
