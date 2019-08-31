@@ -62,3 +62,28 @@ Added support to Promises. The same old methods with Async suffix.
 ```javascript
 var user = await sessionFactory.selecioneUmAsync('user.select', {id: 1}, pool);
 ```
+
+Release Notes
+
+Version 0.1.0 added support to prefix columns using table alias (from sql) 
+
+Example:
+The mapping
+
+'''xml
+  <select id="selecione" parameterType="map" resultMap="usuarioResultMap" prefix="true">
+    select * from user
+  </select>
+'''
+
+is same as:
+
+'''xml
+  <select id="selecione" parameterType="map" resultMap="userResultMap">
+    select 
+    u.id user_id,
+    u.name user_name,
+    u.login user_login
+        from user
+  </select>
+'''

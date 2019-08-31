@@ -118,11 +118,12 @@ exports.No = No;
 
 var NoSelect = (function (_super) {
     __extends(NoSelect, _super);
-    function NoSelect(id, resultMap, javaType, mapeamento) {
+    function NoSelect(id, resultMap, javaType, mapeamento, valorPrefixo) {
         _super.call(this, id, mapeamento);
 
         this.resultMap = resultMap;
         this.javaType = javaType;
+        this.prefixo = valorPrefixo;
     }
     return NoSelect;
 })(No);
@@ -962,12 +963,17 @@ var Principal = (function () {
             if (noResultMap)
                 valorResultMap = noResultMap.value;
 
+            var noPrefixo = gchild.getAttributeNode('prefix');
             var noJavaType = gchild.getAttributeNode('resultType');
             var valorJavaType = '';
+            var valorPrefixo = false;
             if (noJavaType)
                 valorJavaType = noJavaType.value;
+            if( noPrefixo ) {
+                valorPrefixo = noPrefixo.value;
+            }
 
-            noComando = new NoSelect(nomeId, valorResultMap, valorJavaType, mapeamento);
+            noComando = new NoSelect(nomeId, valorResultMap, valorJavaType, mapeamento, valorPrefixo);
         } else {
             noComando = new No(nomeId, mapeamento);
         }
@@ -1437,7 +1443,12 @@ var GerenciadorDeMapeamentos = (function () {
                 if( me.antesDeExecutarAConsultaFn )
                     me.antesDeExecutarAConsultaFn(comandoSql, nomeCompleto, multicliente);
 
-                connection.query(comandoSql.sql, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
+                const parametros = {sql: comandoSql.sql};
+                if( no.prefixo ) {
+                    parametros.nestTables = "_";
+                }
+
+                connection.query(parametros, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
                     if (err) {
                         console.log(err);
                         console.log(err.message);
