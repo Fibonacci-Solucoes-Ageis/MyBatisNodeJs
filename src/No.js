@@ -1,6 +1,92 @@
 var dir_xml = '',
     separador = ':::';
 
+function monteMapColunas(gerenciadorDeMapamentos, caminho, noResultMap, mapColunas) {
+    for( var i = 0; i < noResultMap.propriedadesId.length; i++ ) {
+        var noPropriedade = noResultMap.propriedadesId[i];
+        mapColunas[noPropriedade.coluna] = {
+            caminho: stringToPath(caminho + noPropriedade.nome),
+            prop: noPropriedade
+        };
+    }
+
+    for( var i = 0; i < noResultMap.propriedades.length; i++ ) {
+        var noPropriedade = noResultMap.propriedades[i];
+
+        mapColunas[noPropriedade.coluna] = {
+            caminho: stringToPath(caminho + noPropriedade.nome),
+            prop: noPropriedade
+        };
+
+        if( noPropriedade instanceof NoAssociacao ) {
+            const noAssociacao = gerenciadorDeMapamentos.obtenhaResultMap(noPropriedade.resultMap);
+
+            monteMapColunas( gerenciadorDeMapamentos, caminho + noPropriedade.nome + ".", noAssociacao, mapColunas);
+        }
+    }
+}
+
+function stringToPath(path) {
+
+    // If the path isn't a string, return it
+    if (typeof path !== 'string') return path;
+
+    return path.split('.');
+}
+
+function atribuaValor(chave, mapaObjetos, noProp, path, obj, val) {
+    const tipo = noProp.objResultMap.tipo;
+    // Cache the path length and current spot in the object
+    var length = path.length;
+    var current = obj;
+
+// Loop through the path
+    for( let index = 0; index < path.length; index++ ) {
+        const key = path[index];
+
+        // If this is the last item in the loop, assign the value
+        if (index === length - 1 ) {
+
+            if( current == null ) {
+                if( !mapaObjetos[chave] ) {
+                    const model = global.sessionFactory.models[tipo][tipo];
+
+                    current = new model();
+                } else {
+                    current = mapaObjetos[chave];
+                }
+            }
+
+            current[key] = val;
+        }
+
+        // Otherwise, update the current place in the object
+        else {
+
+            // If the key doesn't exist, create it
+            if (!current[key]) {
+                if( !mapaObjetos[chave] ) {
+                    const model = global.sessionFactory.models[tipo][tipo];
+
+                    current[key] = new model();
+                } else {
+                    current[key] = mapaObjetos[chave];
+                }
+            }
+            // Update the current place in the objet
+            current = current[key];
+        }
+    }
+
+    return current;
+}
+
+function camelToSnake(texto) {
+    return texto.replace(/[\w]([A-Z])/g, function(m) {
+        return m[0] + "_" + m[1];
+    }).toLowerCase();
+}
+
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -505,9 +591,13 @@ var NoResultMap = (function (_super) {
         this.tipo = tipo;
         this.propriedades = [];
         this.propriedadesId = [];
+        this.mapColunas = {};
     }
     NoResultMap.prototype.definaPropriedadeId = function (propriedadeId) {
         this.propriedadesId.push(propriedadeId);
+
+        this.mapColunas[propriedadeId.coluna] = propriedadeId;
+        propriedadeId.objResultMap = this;
     };
 
     NoResultMap.prototype.encontrePropriedadeId = function () {
@@ -538,6 +628,8 @@ var NoResultMap = (function (_super) {
 
     NoResultMap.prototype.adicione = function (propriedade) {
         this.propriedades.push(propriedade);
+        this.mapColunas[propriedade.coluna] = propriedade;
+        propriedade.objResultMap = this;
     };
 
     NoResultMap.prototype.imprima = function () {
@@ -592,6 +684,52 @@ var NoResultMap = (function (_super) {
 
         return chave;
     };
+
+    NoResultMap.prototype.crieObjetos2 = function (gerenciadorDeMapeamentos, registros) {
+        var objetos = [];
+
+        const mapaObjetos = {};
+
+        var model = gerenciadorDeMapeamentos.obtenhaModel(this.tipo);
+
+        model = model[this.tipo];
+
+        for( let i = 0; i < registros.length; i++ ) {
+            let obj = registros[i];
+
+            const chavePrincipal = this.obtenhaChave(obj, '');
+
+            const objetoNaCache = mapaObjetos[chavePrincipal];
+
+            let instancia = null;
+            if( objetoNaCache ) {
+                instancia = objetoNaCache;
+            } else {
+                instancia = new model();
+                objetos.push(instancia);
+            }
+
+            for( const prop in obj) {
+                const propColuna = this.map2Colunas[prop];
+
+                if( propColuna == null ) {
+                    continue;
+                }
+
+                const noProp = propColuna.prop;
+                const chave = noProp.objResultMap.obtenhaChave(obj, '');
+
+                const path = propColuna.caminho;
+                const objeto = atribuaValor(chave, mapaObjetos, noProp, path, instancia, obj[prop]);
+
+                if( noProp instanceof NoPropriedadeId ) {
+                    mapaObjetos[chave] = objeto;
+                }
+            }
+        }
+
+        return objetos;
+    }
 
     NoResultMap.prototype.crieObjetos = function (gerenciadorDeMapeamentos, registros) {
         var objetos = [];
@@ -1161,6 +1299,13 @@ var Principal = (function () {
             gerenciadorDeMapeamentos.adicione(mapeamento);
         }
 
+        for( var i = 0; i < gerenciadorDeMapeamentos.resultMaps.length; i++ ) {
+            var noResultMap = gerenciadorDeMapeamentos.resultMaps[i];
+
+            const mapColunas = {};
+            monteMapColunas(gerenciadorDeMapeamentos,'', noResultMap, mapColunas);
+            noResultMap.map2Colunas = mapColunas;
+        }
         return gerenciadorDeMapeamentos;
     };
 
@@ -1202,10 +1347,15 @@ var GerenciadorDeMapeamentos = (function () {
         this.mapeamentos = [];
         this.mapaMapeamentos = {};
         this.models = {};
+        this.resultMaps = [];
     }
     GerenciadorDeMapeamentos.prototype.obtenhaModel = function (nome) {
         return this.models[nome];
     };
+
+    GerenciadorDeMapeamentos.prototype.adicioneResultMap = function (resultMap) {
+        this.resultMaps.push(resultMap);
+    }
 
     GerenciadorDeMapeamentos.prototype.adicioneModel = function (nomeClasseDominio, classe) {
         if (this.models[nomeClasseDominio] != null)
@@ -1221,6 +1371,10 @@ var GerenciadorDeMapeamentos = (function () {
         this.mapaMapeamentos[mapeamento.nome] = mapeamento;
 
         this.mapeamentos.push(mapeamento);
+
+        for( var i = 0; i < mapeamento.resultMaps.length; i++ ) {
+            this.resultMaps.push(mapeamento.resultMaps[i]);
+        }
     };
 
     GerenciadorDeMapeamentos.prototype.obtenhaResultMap = function (nomeCompletoResultMap) {
@@ -1248,6 +1402,62 @@ var GerenciadorDeMapeamentos = (function () {
 
         return mapeamento.obtenhaNo(idNo);
     };
+
+    GerenciadorDeMapeamentos.prototype.insiraGraph = function (nomeCompleto, objeto, callback, multicliente) {
+        var colunas = [];
+        var valores = [];
+        var params = [];
+
+        for( const prop in objeto) {
+            console.log(prop);
+            const valor = objeto[prop];
+
+            if( valor instanceof Date) {
+                colunas.push(camelToSnake(prop));
+                valores.push(valor);
+            }
+            else if (valor instanceof Object) {
+                colunas.push(camelToSnake(prop) + "_id");
+                valores.push(valor.id);
+            } else {
+                colunas.push(camelToSnake(prop));
+                valores.push(valor);
+            }
+
+            params.push('?');
+        }
+
+        const consulta = 'insert into ' + camelToSnake(objeto.constructor.name) +
+            "(" + colunas.join(",") + ") values(" + params.join(',') + ")";
+
+        console.log(consulta);
+
+        return new Promise( (resolve, reject) => {
+            var me = this;
+
+            //console.log(comandoSql.sql);
+            // console.log(comandoSql.parametros);
+
+            var dominio = require('domain').active;
+
+            this.conexao(function(connection) {
+                if( me.antesDeExecutarAConsultaFn )
+                    me.antesDeExecutarAConsultaFn({sql: consulta}, nomeCompleto, multicliente);
+
+                connection.query(consulta,valores,dominio.intercept(function (rows, fields,err) {
+                    if( err ) {
+                        return reject(err);
+                    }
+
+                    if( rows.insertId ) {
+                        objeto.id = rows.insertId;
+                    }
+
+                    resolve(objeto.id);
+                }));
+            });
+        });
+    }
 
     GerenciadorDeMapeamentos.prototype.insira = function (nomeCompleto, objeto, callback, multicliente) {
         this.insiraAsync(nomeCompleto, objeto, multicliente).then( (id) => {
@@ -1371,8 +1581,10 @@ var GerenciadorDeMapeamentos = (function () {
     };
 
     GerenciadorDeMapeamentos.prototype.selecioneUm = function (nomeCompleto, dados, callback, multicliente) {
+        var inicio = new Date();
         this.selecioneUmAsync(nomeCompleto, dados, multicliente).then( (objeto) => {
             if( callback ) {
+                console.log("Tempo: " + nomeCompleto + " " + (new Date().getTime() - inicio.getTime()));
                 callback(objeto);
             }
         }).catch( (erro) => {
@@ -1383,6 +1595,7 @@ var GerenciadorDeMapeamentos = (function () {
     }
 
     GerenciadorDeMapeamentos.prototype.selecioneUmAsync = function (nomeCompleto, dados, multicliente) {
+        var inicio = new Date();
         return new Promise( (resolve, reject) => {
             // console.log('buscando ' + nomeCompleto);
             this.selecioneVarios(nomeCompleto, dados, function (objetos) {
@@ -1397,6 +1610,7 @@ var GerenciadorDeMapeamentos = (function () {
                     return resolve(null);
                 }
 
+                console.log("Tempo busca: " + nomeCompleto + " => " + (new Date().getTime() - inicio.getTime()));
                 resolve(objetos[0]);
             }, multicliente);
         });
@@ -1460,7 +1674,11 @@ var GerenciadorDeMapeamentos = (function () {
                     }
 
                     if (noResultMap) {
-                        var objetos = noResultMap.crieObjetos(me, rows);
+                        let inicio = new Date();
+                        for (var i = 0; i < 100000; i++) {
+                            var objetos = noResultMap.crieObjetos(me, rows);
+                        }
+
                         resolve(objetos);
                     } else {
                         if (no.javaType == 'String' || no.javaType == 'int' || no.javaType == 'long' || no.javaType == 'java.lang.Long') {
