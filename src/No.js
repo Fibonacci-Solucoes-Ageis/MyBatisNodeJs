@@ -1,27 +1,40 @@
 var dir_xml = '',
     separador = ':::';
 
-function monteMapColunas(gerenciadorDeMapamentos, caminho, noResultMap, mapColunas) {
+function monteMapColunas(gerenciadorDeMapamentos, caminho, noResultMap, noPai, mapColunas) {
     for( var i = 0; i < noResultMap.propriedadesId.length; i++ ) {
         var noPropriedade = noResultMap.propriedadesId[i];
-        mapColunas[noPropriedade.coluna] = {
+
+        var propColuna = {
             caminho: stringToPath(caminho + noPropriedade.nome),
-            prop: noPropriedade
+            caminhoInteiro: caminho + noPropriedade.nome,
+            prop: noPropriedade,
+            noPai: noPai
         };
+
+        mapColunas[noPropriedade.coluna] = propColuna;
     }
 
     for( var i = 0; i < noResultMap.propriedades.length; i++ ) {
         var noPropriedade = noResultMap.propriedades[i];
 
-        mapColunas[noPropriedade.coluna] = {
+        var propColuna = {
             caminho: stringToPath(caminho + noPropriedade.nome),
-            prop: noPropriedade
+            caminhoInteiro: caminho + noPropriedade.nome,
+            prop: noPropriedade,
+            noPai: noPai
         };
+
+        mapColunas[noPropriedade.coluna] = propColuna;
 
         if( noPropriedade instanceof NoAssociacao ) {
             const noAssociacao = gerenciadorDeMapamentos.obtenhaResultMap(noPropriedade.resultMap);
 
-            monteMapColunas( gerenciadorDeMapamentos, caminho + noPropriedade.nome + ".", noAssociacao, mapColunas);
+            monteMapColunas( gerenciadorDeMapamentos, caminho + noPropriedade.nome + ".", noAssociacao, propColuna, mapColunas);
+        } else if( noPropriedade instanceof  NoPropriedadeColecao ) {
+            const noCollection = gerenciadorDeMapamentos.obtenhaResultMap(noPropriedade.resultMap);
+
+            monteMapColunas( gerenciadorDeMapamentos, caminho + noPropriedade.nome + ".", noCollection, propColuna, mapColunas);
         }
     }
 }
@@ -1303,7 +1316,7 @@ var Principal = (function () {
             var noResultMap = gerenciadorDeMapeamentos.resultMaps[i];
 
             const mapColunas = {};
-            monteMapColunas(gerenciadorDeMapeamentos,'', noResultMap, mapColunas);
+            monteMapColunas(gerenciadorDeMapeamentos,'', noResultMap, null, mapColunas);
             noResultMap.map2Colunas = mapColunas;
         }
         return gerenciadorDeMapeamentos;
@@ -1675,9 +1688,7 @@ var GerenciadorDeMapeamentos = (function () {
 
                     if (noResultMap) {
                         let inicio = new Date();
-                        for (var i = 0; i < 100000; i++) {
-                            var objetos = noResultMap.crieObjetos(me, rows);
-                        }
+                        var objetos = noResultMap.crieObjetos(me, rows);
 
                         resolve(objetos);
                     } else {
