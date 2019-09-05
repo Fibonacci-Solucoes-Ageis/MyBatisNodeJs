@@ -18,11 +18,11 @@ Caminho.prototype.adicione = function(pedaco, tipo, noResultMap, ehColecao) {
     objPedaco.noResultMap = noResultMap;
     objPedaco.ehColecao = ehColecao;
 
-    this.pedacos.push(objPedaco);
-
     if( this.pedacos.length > 0 ) {
-        this.pedacos[this.pedacos.length - 1].pai = objPedaco;
+        objPedaco.pai = this.pedacos[this.pedacos.length - 1];
     }
+
+    this.pedacos.push(objPedaco);
 
     objPedaco.caminhoInteiro = this.pedacos.map( (item) => {
         return item.pedaco
@@ -732,6 +732,28 @@ var NoResultMap = (function (_super) {
         return chaveCombinada;
     }
 
+    NoResultMap.prototype.obtenhaID = function (registro, chavePai, prefixo) {
+        var pedacoObjeto = '';
+
+        for (var i in this.propriedadesId) {
+            var propriedade = this.propriedadesId[i];
+
+            var valor = registro[propriedade.obtenhaColuna(prefixo)];
+
+            if (valor != null) {
+                pedacoObjeto += valor;
+            } else {
+                //throw new Error("Chave do objeto não pode ser calculada. \nColuna '" + propriedade.coluna + "' não encontrada para o resultMap '" + this.id + "'");
+            }
+        }
+
+        if (pedacoObjeto == '') {
+            return null;
+        }
+
+        return pedacoObjeto;
+    };
+
     NoResultMap.prototype.obtenhaChave = function (registro, chavePai,prefixo) {
         var chave = this.obtenhaNomeCompleto() + separador;
 
@@ -782,7 +804,7 @@ var NoResultMap = (function (_super) {
                 objetos.push(instancia);
             }
 
-            for( const prop in obj) {
+            for( const prop in obj) { //coluna
                 const propColuna = this.map2Colunas[prop];
 
                 if( propColuna == null ) {
