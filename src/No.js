@@ -4,6 +4,7 @@ var dir_xml = '',
 function Pedaco() {
     this.tipo = '';
     this.pedaco = '';
+    this.pai = null;
 }
 
 function Caminho() {
@@ -18,6 +19,10 @@ Caminho.prototype.adicione = function(pedaco, tipo, noResultMap, ehColecao) {
     objPedaco.ehColecao = ehColecao;
 
     this.pedacos.push(objPedaco);
+
+    if( this.pedacos.length > 0 ) {
+        this.pedacos[this.pedacos.length - 1].pai = objPedaco;
+    }
 
     objPedaco.caminhoInteiro = this.pedacos.map( (item) => {
         return item.pedaco
