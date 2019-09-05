@@ -1,15 +1,63 @@
 var dir_xml = '',
     separador = ':::';
 
-function monteMapColunas(gerenciadorDeMapamentos, caminho, noResultMap, noPai, mapColunas) {
+function Pedaco() {
+    this.tipo = '';
+    this.pedaco = '';
+}
+
+function Caminho() {
+    this.pedacos = [];
+}
+
+Caminho.prototype.adicione = function(pedaco, tipo, noResultMap, ehColecao) {
+    var objPedaco = new Pedaco();
+    objPedaco.pedaco = pedaco;
+    objPedaco.tipo = tipo;
+    objPedaco.noResultMap = noResultMap;
+    objPedaco.ehColecao = ehColecao;
+
+    this.pedacos.push(objPedaco);
+
+    objPedaco.caminhoInteiro = this.pedacos.map( (item) => {
+        return item.pedaco
+    }).join(".");
+}
+
+Caminho.prototype.cloneCaminho = function() {
+    var outro = new Caminho();
+
+    for( var i = 0; i < this.pedacos.length; i++ ) {
+        var pedaco = this.pedacos[i];
+
+        outro.pedacos.push(pedaco);
+    }
+
+    return outro;
+}
+
+Caminho.prototype.obtenhaQtde = function() {
+    return this.pedacos.length;
+}
+
+Caminho.prototype.obtenha = function(indice) {
+    return this.pedacos[indice];
+}
+
+function monteMapColunas(gerenciadorDeMapamentos, caminho, noResultMap, noPai, mapColunas, objCaminho) {
     for( var i = 0; i < noResultMap.propriedadesId.length; i++ ) {
         var noPropriedade = noResultMap.propriedadesId[i];
+
+        var novoCaminho = objCaminho.cloneCaminho();
+
+        novoCaminho.adicione(noPropriedade.nome, null, noResultMap, false);
 
         var propColuna = {
             caminho: stringToPath(caminho + noPropriedade.nome),
             caminhoInteiro: caminho + noPropriedade.nome,
             prop: noPropriedade,
-            noPai: noPai
+            noPai: noPai,
+            novoCaminho: novoCaminho
         };
 
         mapColunas[noPropriedade.coluna] = propColuna;
@@ -18,11 +66,14 @@ function monteMapColunas(gerenciadorDeMapamentos, caminho, noResultMap, noPai, m
     for( var i = 0; i < noResultMap.propriedades.length; i++ ) {
         var noPropriedade = noResultMap.propriedades[i];
 
+        var novoCaminho = objCaminho.cloneCaminho();
+
         var propColuna = {
             caminho: stringToPath(caminho + noPropriedade.nome),
             caminhoInteiro: caminho + noPropriedade.nome,
             prop: noPropriedade,
-            noPai: noPai
+            noPai: noPai,
+            novoCaminho: novoCaminho
         };
 
         mapColunas[noPropriedade.coluna] = propColuna;
@@ -30,11 +81,15 @@ function monteMapColunas(gerenciadorDeMapamentos, caminho, noResultMap, noPai, m
         if( noPropriedade instanceof NoAssociacao ) {
             const noAssociacao = gerenciadorDeMapamentos.obtenhaResultMap(noPropriedade.resultMap);
 
-            monteMapColunas( gerenciadorDeMapamentos, caminho + noPropriedade.nome + ".", noAssociacao, propColuna, mapColunas);
+            novoCaminho.adicione(noPropriedade.nome, noAssociacao.tipo, noAssociacao,false);
+            monteMapColunas( gerenciadorDeMapamentos, caminho + noPropriedade.nome + ".", noAssociacao, propColuna, mapColunas, novoCaminho);
         } else if( noPropriedade instanceof  NoPropriedadeColecao ) {
             const noCollection = gerenciadorDeMapamentos.obtenhaResultMap(noPropriedade.resultMap);
 
-            monteMapColunas( gerenciadorDeMapamentos, caminho + noPropriedade.nome + ".", noCollection, propColuna, mapColunas);
+            novoCaminho.adicione(noPropriedade.nome, noCollection.tipo, noCollection,true);
+            monteMapColunas( gerenciadorDeMapamentos, caminho + noPropriedade.nome + ".", noCollection, propColuna, mapColunas, novoCaminho);
+        } else {
+            novoCaminho.adicione(noPropriedade.nome, null, false);
         }
     }
 }
@@ -890,6 +945,29 @@ var NoResultMap = (function (_super) {
         return encontrouValor;
     };
 
+    NoResultMap.prototype.atribuaPropriedadesId = function (instance,registro,prefixo) {
+        for (var j in this.propriedadesId) {
+            var propId = this.propriedadesId[j];
+
+            var valor = registro[propId.obtenhaColuna(prefixo)];
+
+            if (valor instanceof Buffer) {
+                if (valor.length == 1) {
+                    if (valor[0] == 0) {
+                        valor = false;
+                    } else {
+                        valor = true;
+                    }
+                }
+            }
+
+            instance[propId.nome] = valor;
+
+            if (valor)
+                encontrouValores = true;
+        }
+    }
+
     NoResultMap.prototype.atribuaPropriedadesSimples = function (instance,registro,prefixo) {
         var encontrouValores = false;
         for (var j in this.propriedadesId) {
@@ -1316,7 +1394,7 @@ var Principal = (function () {
             var noResultMap = gerenciadorDeMapeamentos.resultMaps[i];
 
             const mapColunas = {};
-            monteMapColunas(gerenciadorDeMapeamentos,'', noResultMap, null, mapColunas);
+            monteMapColunas(gerenciadorDeMapeamentos,'', noResultMap, null, mapColunas, new Caminho());
             noResultMap.map2Colunas = mapColunas;
         }
         return gerenciadorDeMapeamentos;
