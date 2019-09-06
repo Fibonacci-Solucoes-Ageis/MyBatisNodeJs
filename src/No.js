@@ -706,6 +706,9 @@ var NoResultMap = (function (_super) {
     NoResultMap.prototype.definaPropriedadeId = function (propriedadeId) {
         this.propriedadesId.push(propriedadeId);
 
+        if( this.mapColunas[propriedadeId.coluna] ) {
+            throw new Error("Coluna " + propriedadeId.coluna + ' já está associada. ResultMap: ' + this.obtenhaNomeCompleto());
+        }
         this.mapColunas[propriedadeId.coluna] = propriedadeId;
     };
 
@@ -737,6 +740,11 @@ var NoResultMap = (function (_super) {
 
     NoResultMap.prototype.adicione = function (propriedade) {
         this.propriedades.push(propriedade);
+
+        if( this.mapColunas[propriedadeId.coluna] ) {
+            throw new Error("Coluna " + propriedadeId.coluna + ' já está associada. ResultMap: ' + this.obtenhaNomeCompleto());
+        }
+
         this.mapColunas[propriedade.coluna] = propriedade;
     };
 
@@ -848,7 +856,7 @@ var NoResultMap = (function (_super) {
                     instancia = new model();
                 } else {
                     instancia = Object.create(model.prototype);
-                    instancia.constructor.apply(instance, []);
+                    instancia.constructor.apply(instancia, []);
                 }
                 objetos.push(instancia);
                 mapaObjetos[chavePrincipal] = instancia;
