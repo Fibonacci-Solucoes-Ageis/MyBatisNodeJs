@@ -1825,7 +1825,7 @@ var GerenciadorDeMapeamentos = (function () {
     }
 
     GerenciadorDeMapeamentos.prototype.selecioneUmAsync = function (nomeCompleto, dados, multicliente) {
-        var inicio = new Date();
+        //var inicio = new Date();
         return new Promise( (resolve, reject) => {
             // console.log('buscando ' + nomeCompleto);
             this.selecioneVarios(nomeCompleto, dados, function (objetos) {
@@ -1840,7 +1840,7 @@ var GerenciadorDeMapeamentos = (function () {
                     return resolve(null);
                 }
 
-                console.log("Tempo busca: " + nomeCompleto + " => " + (new Date().getTime() - inicio.getTime()));
+                //console.log("Tempo busca: " + nomeCompleto + " => " + (new Date().getTime() - inicio.getTime()));
                 resolve(objetos[0]);
             }, multicliente);
         });
