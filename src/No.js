@@ -194,6 +194,7 @@ var No = (function () {
         this.id = id;
         this.mapeamento = mapeamento;
         this.filhos = [];
+        this.nomeCompleto = this.mapeamento.nome + "." + this.id;
     }
 
     No.prototype.adicione = function (no) {
@@ -232,7 +233,7 @@ var No = (function () {
     };
 
     No.prototype.obtenhaNomeCompleto = function () {
-        return this.mapeamento.nome + "." + this.id;
+        return this.nomeCompleto;
     };
 
     No.prototype.processeExpressao = function (texto, comandoSql, dados) {
@@ -670,7 +671,6 @@ var NoResultMap = (function (_super) {
         this.propriedadesId.push(propriedadeId);
 
         this.mapColunas[propriedadeId.coluna] = propriedadeId;
-        propriedadeId.objResultMap = this;
     };
 
     NoResultMap.prototype.encontrePropriedadeId = function () {
@@ -702,7 +702,6 @@ var NoResultMap = (function (_super) {
     NoResultMap.prototype.adicione = function (propriedade) {
         this.propriedades.push(propriedade);
         this.mapColunas[propriedade.coluna] = propriedade;
-        propriedade.objResultMap = this;
     };
 
     NoResultMap.prototype.imprima = function () {
@@ -735,23 +734,30 @@ var NoResultMap = (function (_super) {
     NoResultMap.prototype.obtenhaID = function (registro, chavePai, prefixo) {
         var pedacoObjeto = '';
 
-        for (var i in this.propriedadesId) {
-            var propriedade = this.propriedadesId[i];
+        var valor = this.propriedadesId.map( (propriedade) => {
+            return registro[propriedade.obtenhaColuna(prefixo)]
+        }).join('');
 
-            var valor = registro[propriedade.obtenhaColuna(prefixo)];
+        /*
+        for (var i = 0 in this.propriedadesId) {
+          var propriedade = this.propriedadesId[i];
 
-            if (valor != null) {
-                pedacoObjeto += valor;
-            } else {
-                //throw new Error("Chave do objeto não pode ser calculada. \nColuna '" + propriedade.coluna + "' não encontrada para o resultMap '" + this.id + "'");
-            }
+          var valor = registro[propriedade.obtenhaColuna(prefixo)];
+
+          if (valor != null) {
+            pedacoObjeto += valor;
+          } else {
+            //throw new Error("Chave do objeto não pode ser calculada. \nColuna '" + propriedade.coluna + "' não encontrada para o resultMap '" + this.id + "'");
+          }
         }
 
         if (pedacoObjeto == '') {
-            return null;
+          return null;
         }
+    */
+        return valor;
 
-        return pedacoObjeto;
+        //return pedacoObjeto;
     };
 
     NoResultMap.prototype.obtenhaChave = function (registro, chavePai,prefixo) {
