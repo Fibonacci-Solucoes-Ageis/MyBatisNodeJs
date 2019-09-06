@@ -64,7 +64,12 @@ Colecao.prototype.adicione = function(chaveColecao, instancia) {
         if( !instancia ) {
             const modelColecao = global.sessionFactory.models[this.tipo][this.tipo];
 
-            instancia = new modelColecao();
+            if (global.es7) {
+                instancia = new model();
+            } else {
+                instancia = Object.create(model.prototype);
+                instancia.constructor.apply(instancia, []);
+            }
         }
 
         this.mapaColecao[chaveColecao] = instancia;
@@ -839,7 +844,12 @@ var NoResultMap = (function (_super) {
             if( objetoNaCache ) {
                 instancia = objetoNaCache;
             } else {
-                instancia = new model();
+                if (global.es7) {
+                    instancia = new model();
+                } else {
+                    instancia = Object.create(model.prototype);
+                    instancia.constructor.apply(instance, []);
+                }
                 objetos.push(instancia);
                 mapaObjetos[chavePrincipal] = instancia;
             }
@@ -895,9 +905,14 @@ var NoResultMap = (function (_super) {
 
                         if( objeto == null ) {
                             var tipo = pedaco.noResultMap.tipo;
-                            const modelColecao = global.sessionFactory.models[tipo][tipo];
+                            const model = global.sessionFactory.models[tipo][tipo];
 
-                            objeto = new modelColecao();
+                            if (global.es7) {
+                                objeto = new model();
+                            } else {
+                                objeto = Object.create(model.prototype);
+                                objeto.constructor.apply(instance, []);
+                            }
 
                             val[pedaco.pedaco] = objeto;
                         }
