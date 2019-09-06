@@ -65,9 +65,9 @@ Colecao.prototype.adicione = function(chaveColecao, instancia) {
             const modelColecao = global.sessionFactory.models[this.tipo][this.tipo];
 
             if (global.es7) {
-                instancia = new model();
+                instancia = new modelColecao();
             } else {
-                instancia = Object.create(model.prototype);
+                instancia = Object.create(modelColecao.prototype);
                 instancia.constructor.apply(instancia, []);
             }
         }
@@ -1903,7 +1903,7 @@ var GerenciadorDeMapeamentos = (function () {
 
                     if (noResultMap) {
                         var inicio = new Date();
-                        var objetos = noResultMap.crieObjetos(me, rows);
+                        var objetos = noResultMap.crieObjetos2(me, rows);
 
                         resolve(objetos);
                     } else {
