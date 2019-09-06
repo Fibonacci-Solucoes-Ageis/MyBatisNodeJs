@@ -106,6 +106,9 @@ function monteMapColunas(gerenciadorDeMapamentos, mapResultMaps, caminho, noResu
 
         var chave = prefixoPropriedade + noPropriedade.coluna;
 
+        if( mapColunas[chave] ) {
+            throw new Error("Coluna " + propriedadeId.coluna + ' já está associada. ResultMap: ' + this.obtenhaNomeCompleto());
+        }
         mapColunas[chave] = propColuna;
     }
 
@@ -125,6 +128,10 @@ function monteMapColunas(gerenciadorDeMapamentos, mapResultMaps, caminho, noResu
         };
 
         var chave = prefixoPropriedade + noPropriedade.coluna;
+
+        if( mapColunas[chave] ) {
+            throw new Error("Coluna " + propriedadeId.coluna + ' já está associada. ResultMap: ' + this.obtenhaNomeCompleto());
+        }
         mapColunas[chave] = propColuna;
 
         if( noPropriedade instanceof NoAssociacao ) {
@@ -706,9 +713,6 @@ var NoResultMap = (function (_super) {
     NoResultMap.prototype.definaPropriedadeId = function (propriedadeId) {
         this.propriedadesId.push(propriedadeId);
 
-        if( this.mapColunas[propriedadeId.coluna] ) {
-            throw new Error("Coluna " + propriedadeId.coluna + ' já está associada. ResultMap: ' + this.obtenhaNomeCompleto());
-        }
         this.mapColunas[propriedadeId.coluna] = propriedadeId;
     };
 
@@ -740,11 +744,6 @@ var NoResultMap = (function (_super) {
 
     NoResultMap.prototype.adicione = function (propriedade) {
         this.propriedades.push(propriedade);
-
-        if( this.mapColunas[propriedadeId.coluna] ) {
-            throw new Error("Coluna " + propriedadeId.coluna + ' já está associada. ResultMap: ' + this.obtenhaNomeCompleto());
-        }
-
         this.mapColunas[propriedade.coluna] = propriedade;
     };
 
