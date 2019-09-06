@@ -1282,6 +1282,8 @@ var Principal = (function () {
         var nomeId = noXmlResultMap.getAttributeNode('id').value;
         var tipo = noXmlResultMap.getAttributeNode('type').value;
 
+        var pedacos = tipo.split('.');
+        tipo = pedacos[pedacos.length - 1];
         var noResultMap = new NoResultMap(nomeId, tipo, mapeamento);
 
         var possuiPropriedadeId = false;
@@ -1903,7 +1905,7 @@ var GerenciadorDeMapeamentos = (function () {
 
                     if (noResultMap) {
                         var inicio = new Date();
-                        var objetos = noResultMap.crieObjetos2(me, rows);
+                        var objetos = noResultMap.crieObjetos(me, rows);
 
                         resolve(objetos);
                     } else {
