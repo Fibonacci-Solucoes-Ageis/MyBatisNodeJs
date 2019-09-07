@@ -51,6 +51,13 @@ Caminho.prototype.obtenha = function(indice) {
     return this.pedacos[indice];
 }
 
+Caminho.prototype.toString = function() {
+    if( this.pedacos.length > 0 ) {
+        return this.pedacos[this.pedacos.length - 1].caminhoInteiro;
+    }
+    return '';
+}
+
 function Colecao() {
     this.mapaColecao = {}
     this.lista = []
@@ -80,12 +87,27 @@ Colecao.prototype.adicione = function(chaveColecao, instancia) {
     return instancia;
 }
 
-function monteMapColunas(gerenciadorDeMapamentos, mapResultMaps, caminho, noResultMap, noPai, mapColunas, objCaminho, prefixoInteiro) {
-    if( mapResultMaps[noResultMap.obtenhaNomeCompleto()] ) {
+function chequeErros(chave, mapColunas, erros, noResultMap, novoCaminho) {
+    if (mapColunas[chave] && mapColunas[chave].length > 0) {
+        erros.qtde ++;
+        erros.erros.push('erro: ');
+        console.log('-------------------------------------------------');
+        console.log('\tWarning: ' + erros.resultMap);
+        console.log('\t' + (erros.erros.length) +  '. Erro ' + erros.qtde);
+        console.log('\t' + novoCaminho.toString() + " <-> " + mapColunas[chave][0].caminhoInteiro);
+        console.log("\tColuna " + chave + ' já está associada. ResultMap: ' + noResultMap.obtenhaNomeCompleto());
+    } else {
+        mapColunas[chave] = [];
+    }
+}
+
+function monteMapColunas(gerenciadorDeMapamentos, mapResultMaps, caminho, noResultMap, noPai, mapColunas, objCaminho, prefixoInteiro, erros) {
+    var caminhoResultMap = caminho.toString() + noResultMap.obtenhaNomeCompleto();
+    if( mapResultMaps[caminhoResultMap] ) {
         return;
     }
 
-    mapResultMaps[noResultMap.obtenhaNomeCompleto()] = noResultMap;
+    mapResultMaps[caminhoResultMap] = noResultMap;
 
     for( var i = 0; i < noResultMap.propriedadesId.length; i++ ) {
         var noPropriedade = noResultMap.propriedadesId[i];
@@ -106,10 +128,11 @@ function monteMapColunas(gerenciadorDeMapamentos, mapResultMaps, caminho, noResu
 
         var chave = prefixoPropriedade + noPropriedade.coluna;
 
-        if( mapColunas[chave] ) {
-            throw new Error("Coluna " + propriedadeId.coluna + ' já está associada. ResultMap: ' + this.obtenhaNomeCompleto());
+        if( noPropriedade.coluna ) {
+            chequeErros(chave, mapColunas, erros, noResultMap, novoCaminho);
+
+            mapColunas[chave].push(propColuna);
         }
-        mapColunas[chave] = propColuna;
     }
 
     for( var i = 0; i < noResultMap.propriedades.length; i++ ) {
@@ -129,23 +152,24 @@ function monteMapColunas(gerenciadorDeMapamentos, mapResultMaps, caminho, noResu
 
         var chave = prefixoPropriedade + noPropriedade.coluna;
 
-        if( mapColunas[chave] ) {
-            throw new Error("Coluna " + propriedadeId.coluna + ' já está associada. ResultMap: ' + this.obtenhaNomeCompleto());
-        }
-        mapColunas[chave] = propColuna;
-
         if( noPropriedade instanceof NoAssociacao ) {
             const noAssociacao = gerenciadorDeMapamentos.obtenhaResultMap(noPropriedade.resultMap);
 
             novoCaminho.adicione(noPropriedade.nome, noAssociacao.tipo, noAssociacao,false, (noPropriedade.prefixo ? noPropriedade.prefixo : ''));
-            monteMapColunas( gerenciadorDeMapamentos, mapResultMaps,caminho + noPropriedade.nome + ".", noAssociacao, propColuna, mapColunas, novoCaminho, prefixoPropriedade);
+            monteMapColunas( gerenciadorDeMapamentos, mapResultMaps,caminho + noPropriedade.nome + ".", noAssociacao, propColuna, mapColunas, novoCaminho, prefixoPropriedade, erros);
         } else if( noPropriedade instanceof  NoPropriedadeColecao ) {
             const noCollection = gerenciadorDeMapamentos.obtenhaResultMap(noPropriedade.resultMap);
 
             novoCaminho.adicione(noPropriedade.nome, noCollection.tipo, noCollection,true, (noPropriedade.prefixo ? noPropriedade.prefixo : ''));
-            monteMapColunas( gerenciadorDeMapamentos, mapResultMaps, caminho + noPropriedade.nome + ".", noCollection, propColuna, mapColunas, novoCaminho, prefixoPropriedade);
+            monteMapColunas( gerenciadorDeMapamentos, mapResultMaps, caminho + noPropriedade.nome + ".", noCollection, propColuna, mapColunas, novoCaminho, prefixoPropriedade, erros);
         } else {
             novoCaminho.adicione(noPropriedade.nome, null, false);
+
+            if( noPropriedade.coluna ) {
+                chequeErros(chave, mapColunas, erros, noResultMap, novoCaminho);
+
+                mapColunas[chave].push(propColuna);
+            }
         }
     }
 }
@@ -712,8 +736,6 @@ var NoResultMap = (function (_super) {
     }
     NoResultMap.prototype.definaPropriedadeId = function (propriedadeId) {
         this.propriedadesId.push(propriedadeId);
-
-        this.mapColunas[propriedadeId.coluna] = propriedadeId;
     };
 
     NoResultMap.prototype.encontrePropriedadeId = function () {
@@ -744,6 +766,11 @@ var NoResultMap = (function (_super) {
 
     NoResultMap.prototype.adicione = function (propriedade) {
         this.propriedades.push(propriedade);
+
+        if( propriedade.coluna == '' ) {
+            return;
+        }
+
         this.mapColunas[propriedade.coluna] = propriedade;
     };
 
@@ -1534,13 +1561,20 @@ var Principal = (function () {
             gerenciadorDeMapeamentos.adicione(mapeamento);
         }
 
+        var erros = {
+            erros: [],
+            qtde: 0
+        };
         for( var i = 0; i < gerenciadorDeMapeamentos.resultMaps.length; i++ ) {
             var noResultMap = gerenciadorDeMapeamentos.resultMaps[i];
 
             const mapColunas = {};
             const mapResultMaps = {};
 
-            monteMapColunas(gerenciadorDeMapeamentos, mapResultMaps, '', noResultMap, null, mapColunas, new Caminho(), '');
+            erros.resultMap = noResultMap.nomeCompleto;
+            erros.qtde = 0;
+
+            monteMapColunas(gerenciadorDeMapeamentos, mapResultMaps, '', noResultMap, null, mapColunas, new Caminho(), '', erros);
             noResultMap.map2Colunas = mapColunas;
         }
         return gerenciadorDeMapeamentos;
