@@ -102,12 +102,15 @@ function chequeErros(chave, mapColunas, erros, noResultMap, novoCaminho) {
 }
 
 function monteMapColunas(gerenciadorDeMapamentos, mapResultMaps, caminho, noResultMap, noPai, mapColunas, objCaminho, prefixoInteiro, erros) {
-    var caminhoResultMap = caminho.toString() + noResultMap.obtenhaNomeCompleto();
-    if( mapResultMaps[caminhoResultMap] ) {
-        return;
-    }
+    var noCorrente = noPai ? noPai.noPai : null;
+    while(noCorrente != null) {
+        var nomeResultMap = noResultMap.obtenhaNomeCompleto();
+        if( noCorrente.prop.resultMap === nomeResultMap ) {
+            return;
+        }
 
-    mapResultMaps[caminhoResultMap] = noResultMap;
+        noCorrente = noCorrente.noPai;
+    }
 
     for( var i = 0; i < noResultMap.propriedadesId.length; i++ ) {
         var noPropriedade = noResultMap.propriedadesId[i];
