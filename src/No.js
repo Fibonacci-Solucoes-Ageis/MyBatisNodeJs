@@ -907,6 +907,16 @@ var NoResultMap = (function (_super) {
 
                     var valor = registro[prop];
 
+                    if (valor instanceof Buffer) {
+                        if (valor.length == 1) {
+                            if (valor[0] == 0) {
+                                valor = false;
+                            } else {
+                                valor = true;
+                            }
+                        }
+                    }
+
                     atribuaValor(propColuna.novoCaminho, instancia, valor, (val, caminho, pedaco, prefixo) => {
                         if( pedaco.ehColecao ) {
                             var chave = '$$' + pedaco.pedaco;
