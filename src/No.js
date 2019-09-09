@@ -92,11 +92,13 @@ function chequeErros(chave, mapColunas, erros, noResultMap, novoCaminho) {
     if (mapColunas[chave] && mapColunas[chave].length > 0) {
         erros.qtde ++;
         erros.erros.push('erro: ');
-        console.warn('-------------------------------------------------');
-        console.warn('\tWarning: ' + erros.resultMap);
-        console.warn('\t' + (erros.erros.length) +  '. Erro ' + erros.qtde);
-        console.warn('\t' + novoCaminho.toString() + " <-> " + mapColunas[chave][0].caminhoInteiro);
-        console.warn("\tColuna " + chave + ' já está associada. ResultMap: ' + noResultMap.obtenhaNomeCompleto());
+        if( global.exibirWarnings ) {
+            console.warn('-------------------------------------------------');
+            console.warn('\tWarning: ' + erros.resultMap);
+            console.warn('\t' + (erros.erros.length) + '. Erro ' + erros.qtde);
+            console.warn('\t' + novoCaminho.toString() + " <-> " + mapColunas[chave][0].caminhoInteiro);
+            console.warn("\tColuna " + chave + ' já está associada. ResultMap: ' + noResultMap.obtenhaNomeCompleto());
+        }
     } else {
         mapColunas[chave] = [];
     }
