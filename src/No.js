@@ -956,7 +956,7 @@ var NoResultMap = (function (_super) {
                             pedaco.noResultMap.atribuaPropriedadesId(objetoNaCache, registro, prefixo);
 
                             return objetoNaCache;
-                        } else if( propColuna.noPai && propColuna.noPai.prop.constructor.name === 'NoAssociacao' ) {
+                        } else {
                             var objeto = val[pedaco.pedaco];
 
                             if( objeto == null ) {
