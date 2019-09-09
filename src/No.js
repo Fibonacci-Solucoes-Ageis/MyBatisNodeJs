@@ -91,11 +91,13 @@ function chequeErros(chave, mapColunas, erros, noResultMap, novoCaminho) {
     if (mapColunas[chave] && mapColunas[chave].length > 0) {
         erros.qtde ++;
         erros.erros.push('erro: ');
-        console.warn('-------------------------------------------------');
-        console.warn('\tWarning: ' + erros.resultMap);
-        console.warn('\t' + (erros.erros.length) +  '. Erro ' + erros.qtde);
-        console.warn('\t' + novoCaminho.toString() + " <-> " + mapColunas[chave][0].caminhoInteiro);
-        console.warn("\tColuna " + chave + ' já está associada. ResultMap: ' + noResultMap.obtenhaNomeCompleto());
+        if( global.exibirWarnings ) {
+            console.warn('-------------------------------------------------');
+            console.warn('\tWarning: ' + erros.resultMap);
+            console.warn('\t' + (erros.erros.length) + '. Erro ' + erros.qtde);
+            console.warn('\t' + novoCaminho.toString() + " <-> " + mapColunas[chave][0].caminhoInteiro);
+            console.warn("\tColuna " + chave + ' já está associada. ResultMap: ' + noResultMap.obtenhaNomeCompleto());
+        }
     } else {
         mapColunas[chave] = [];
     }
@@ -892,73 +894,77 @@ var NoResultMap = (function (_super) {
             }
 
             for( const prop in registro) {
-                var propColuna = this.map2Colunas[prop];
+                var listaDeColunas = this.map2Colunas[prop];
 
-                if( propColuna == null ) {
+                if( listaDeColunas == null ) {
                     continue;
                 }
 
-                var valor = registro[prop];
+                for( var indice = 0; indice < listaDeColunas.length; indice ++ ) {
+                    var propColuna = listaDeColunas[indice];
 
-                atribuaValor(propColuna.novoCaminho, instancia, valor, (val, caminho, pedaco, prefixo) => {
-                    if( pedaco.ehColecao ) {
-                        var chave = '$$' + pedaco.pedaco;
-                        var colecao = val[chave];
+                    var valor = registro[prop];
 
-                        if( colecao == null ) {
-                            colecao = new Colecao();
-                            colecao.tipo = pedaco.tipo;
-                            colecao.objeto = val;
-                            colecao.propriedade = chave;
+                    atribuaValor(propColuna.novoCaminho, instancia, valor, (val, caminho, pedaco, prefixo) => {
+                        if( pedaco.ehColecao ) {
+                            var chave = '$$' + pedaco.pedaco;
+                            var colecao = val[chave];
 
-                            listaDeColecoes.push(colecao);
+                            if( colecao == null ) {
+                                colecao = new Colecao();
+                                colecao.tipo = pedaco.tipo;
+                                colecao.objeto = val;
+                                colecao.propriedade = chave;
 
-                            val[pedaco.pedaco] = colecao.lista;
-                            val[chave] = colecao;
-                        }
+                                listaDeColecoes.push(colecao);
 
-                        var chave = pedaco.noResultMap.obtenhaID(registro, prefixo);
-
-                        if( chave === '') {
-                            return null;
-                        }
-
-                        var chaveObjeto = pedaco.noResultMap.obtenhaNomeCompleto() + "::" + chave;
-                        var objetoNaCache = mapaObjetos[chaveObjeto];
-
-                        var temNaCache = objetoNaCache != null;
-
-                        objetoNaCache = colecao.adicione(chave, objetoNaCache);
-
-                        if( !temNaCache ) {
-                            mapaObjetos[chaveObjeto] = objetoNaCache;
-                        }
-
-                        pedaco.noResultMap.atribuaPropriedadesId(objetoNaCache, registro, prefixo);
-
-                        return objetoNaCache;
-                    } else if( propColuna.noPai && propColuna.noPai.prop.constructor.name === 'NoAssociacao' ) {
-                        var objeto = val[pedaco.pedaco];
-
-                        if( objeto == null ) {
-                            var tipo = pedaco.noResultMap.tipo;
-                            const model = global.sessionFactory.models[tipo][tipo];
-
-                            if (global.es7) {
-                                objeto = new model();
-                            } else {
-                                objeto = Object.create(model.prototype);
-                                objeto.constructor.apply(instance, []);
+                                val[pedaco.pedaco] = colecao.lista;
+                                val[chave] = colecao;
                             }
 
-                            val[pedaco.pedaco] = objeto;
+                            var chave = pedaco.noResultMap.obtenhaID(registro, prefixo);
+
+                            if( chave === '') {
+                                return null;
+                            }
+
+                            var chaveObjeto = pedaco.noResultMap.obtenhaNomeCompleto() + "::" + chave;
+                            var objetoNaCache = mapaObjetos[chaveObjeto];
+
+                            var temNaCache = objetoNaCache != null;
+
+                            objetoNaCache = colecao.adicione(chave, objetoNaCache);
+
+                            if( !temNaCache ) {
+                                mapaObjetos[chaveObjeto] = objetoNaCache;
+                            }
+
+                            pedaco.noResultMap.atribuaPropriedadesId(objetoNaCache, registro, prefixo);
+
+                            return objetoNaCache;
+                        } else if( propColuna.noPai && propColuna.noPai.prop.constructor.name === 'NoAssociacao' ) {
+                            var objeto = val[pedaco.pedaco];
+
+                            if( objeto == null ) {
+                                var tipo = pedaco.noResultMap.tipo;
+                                const model = global.sessionFactory.models[tipo][tipo];
+
+                                if (global.es7) {
+                                    objeto = new model();
+                                } else {
+                                    objeto = Object.create(model.prototype);
+                                    objeto.constructor.apply(instance, []);
+                                }
+
+                                val[pedaco.pedaco] = objeto;
+                            }
+
+                            return objeto;
                         }
 
-                        return objeto;
-                    }
-
-                    return val;
-                });
+                        return val;
+                    });
+                }
             }
         }
 
@@ -1949,7 +1955,7 @@ var GerenciadorDeMapeamentos = (function () {
 
                     if (noResultMap) {
                         var inicio = new Date();
-                        var objetos = noResultMap.crieObjetos(me, rows);
+                        var objetos = noResultMap.crieObjetos2(me, rows);
 
                         resolve(objetos);
                     } else {
