@@ -69,7 +69,7 @@ Colecao.prototype.adicione = function(chaveColecao, instancia) {
 
     if( !objetoColecao ) {
         if( !instancia ) {
-            const modelColecao = global.sessionFactory.models[this.tipo][this.tipo];
+            const modelColecao = global.sessionFactory.obtenhaNomeModel(registro, )[this.tipo][this.tipo];
 
             if (global.es7) {
                 instancia = new modelColecao();
@@ -905,6 +905,16 @@ var NoResultMap = (function (_super) {
 
                     var valor = registro[prop];
 
+                    if (valor instanceof Buffer) {
+                        if (valor.length == 1) {
+                            if (valor[0] == 0) {
+                                valor = false;
+                            } else {
+                                valor = true;
+                            }
+                        }
+                    }
+
                     atribuaValor(propColuna.novoCaminho, instancia, valor, (val, caminho, pedaco, prefixo) => {
                         if( pedaco.ehColecao ) {
                             var chave = '$$' + pedaco.pedaco;
@@ -946,7 +956,7 @@ var NoResultMap = (function (_super) {
                             var objeto = val[pedaco.pedaco];
 
                             if( objeto == null ) {
-                                var tipo = pedaco.noResultMap.tipo;
+                                var tipo = pedaco.noResultMap.obtenhaNomeModel(registro, prefixo);
                                 const model = global.sessionFactory.models[tipo][tipo];
 
                                 if (global.es7) {
