@@ -64,12 +64,13 @@ function Colecao() {
     this.tipo = null;
 }
 
-Colecao.prototype.adicione = function(chaveColecao, instancia) {
+Colecao.prototype.adicione = function(chaveColecao, instancia, registro, noResultMap, prefixo) {
     var objetoColecao = this.mapaColecao[chaveColecao];
 
     if( !objetoColecao ) {
         if( !instancia ) {
-            const modelColecao = global.sessionFactory.obtenhaNomeModel(registro, )[this.tipo][this.tipo];
+            const nomeModel = noResultMap.obtenhaNomeModel(registro, prefixo);
+            var modelColecao = global.sessionFactory.models[nomeModel][nomeModel];
 
             if (global.es7) {
                 instancia = new modelColecao();
@@ -91,13 +92,11 @@ function chequeErros(chave, mapColunas, erros, noResultMap, novoCaminho) {
     if (mapColunas[chave] && mapColunas[chave].length > 0) {
         erros.qtde ++;
         erros.erros.push('erro: ');
-        if( global.exibirWarnings ) {
-            console.warn('-------------------------------------------------');
-            console.warn('\tWarning: ' + erros.resultMap);
-            console.warn('\t' + (erros.erros.length) + '. Erro ' + erros.qtde);
-            console.warn('\t' + novoCaminho.toString() + " <-> " + mapColunas[chave][0].caminhoInteiro);
-            console.warn("\tColuna " + chave + ' já está associada. ResultMap: ' + noResultMap.obtenhaNomeCompleto());
-        }
+        console.warn('-------------------------------------------------');
+        console.warn('\tWarning: ' + erros.resultMap);
+        console.warn('\t' + (erros.erros.length) +  '. Erro ' + erros.qtde);
+        console.warn('\t' + novoCaminho.toString() + " <-> " + mapColunas[chave][0].caminhoInteiro);
+        console.warn("\tColuna " + chave + ' já está associada. ResultMap: ' + noResultMap.obtenhaNomeCompleto());
     } else {
         mapColunas[chave] = [];
     }
@@ -868,12 +867,15 @@ var NoResultMap = (function (_super) {
         var mapaColecoes = {};
         var listaDeColecoes = [];
 
-        var model = gerenciadorDeMapeamentos.obtenhaModel(this.tipo);
-
-        model = model[this.tipo];
 
         for( var i = 0; i < registros.length; i++ ) {
             let registro = registros[i];
+
+            var nomeModel = this.obtenhaNomeModel(registro, '');
+
+            var model = gerenciadorDeMapeamentos.obtenhaModel(nomeModel);
+
+            model = model[nomeModel];
 
             var chavePrincipal = this.tipo + this.obtenhaID(registro, '');
 
@@ -905,16 +907,6 @@ var NoResultMap = (function (_super) {
 
                     var valor = registro[prop];
 
-                    if (valor instanceof Buffer) {
-                        if (valor.length == 1) {
-                            if (valor[0] == 0) {
-                                valor = false;
-                            } else {
-                                valor = true;
-                            }
-                        }
-                    }
-
                     atribuaValor(propColuna.novoCaminho, instancia, valor, (val, caminho, pedaco, prefixo) => {
                         if( pedaco.ehColecao ) {
                             var chave = '$$' + pedaco.pedaco;
@@ -943,7 +935,7 @@ var NoResultMap = (function (_super) {
 
                             var temNaCache = objetoNaCache != null;
 
-                            objetoNaCache = colecao.adicione(chave, objetoNaCache);
+                            objetoNaCache = colecao.adicione(chave, objetoNaCache, registro, pedaco.noResultMap, prefixo);
 
                             if( !temNaCache ) {
                                 mapaObjetos[chaveObjeto] = objetoNaCache;
@@ -956,14 +948,14 @@ var NoResultMap = (function (_super) {
                             var objeto = val[pedaco.pedaco];
 
                             if( objeto == null ) {
-                                var tipo = pedaco.noResultMap.obtenhaNomeModel(registro, prefixo);
+                                var tipo = pedaco.noResultMap.tipo;
                                 const model = global.sessionFactory.models[tipo][tipo];
 
                                 if (global.es7) {
                                     objeto = new model();
                                 } else {
                                     objeto = Object.create(model.prototype);
-                                    objeto.constructor.apply(instance, []);
+                                    objeto.constructor.apply(objeto, []);
                                 }
 
                                 val[pedaco.pedaco] = objeto;
