@@ -960,8 +960,8 @@ var NoResultMap = (function (_super) {
                             var objeto = val[pedaco.pedaco];
 
                             if( objeto == null ) {
-                                var tipo = pedaco.noResultMap.tipo;
-                                const model = global.sessionFactory.models[tipo][tipo];
+                                const nomeModel = pedaco.noResultMap.obtenhaNomeModel(registro, prefixo);
+                                const model = global.sessionFactory.models[nomeModel][nomeModel];
 
                                 if (global.es7) {
                                     objeto = new model();
