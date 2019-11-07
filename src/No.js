@@ -1527,7 +1527,6 @@ var Principal = (function () {
 
         var gerenciadorDeMapeamentos = new GerenciadorDeMapeamentos();
 
-
         var models = {};
 
         var walk = function(dir, done) {
@@ -1536,21 +1535,26 @@ var Principal = (function () {
             var pending = list.length;
             if (!pending) return done(null, results);
             list.forEach(function(file) {
-                var file = dir + '/' + file;
+                var arquivo = path.resolve(dir) + '/' + file;
 
-                var stat = fs.statSync(file);
+                var stat = null;
 
-                if (stat && stat.isDirectory() && file.indexOf('.svn') ==-1) {
-                    walk(file, function(err, res) {
+                try {
+                    stat = fs.statSync(arquivo);
+                } catch(erro) {
+                    arquivo = file;
+                    stat = fs.statSync(arquivo);
+                }
+
+                if (stat && stat.isDirectory() && arquivo.indexOf('.svn') ==-1) {
+                    walk(arquivo, function(err, res) {
                         results = results.concat(res);
                         if (!--pending) done(null, results);
                     });
                 } else {
-                    results.push(file);
+                    results.push(arquivo);
                     if (!--pending) done(null, results);
                 }
-
-
             });
         };
 
@@ -1563,13 +1567,13 @@ var Principal = (function () {
                 var arquivo = arquivos[i];
                 if( !arquivo.endsWith(ext) ) continue;
 
-                var nomeArquivo = path.basename(arquivo);
-                var nomeClasseDominio =  nomeArquivo.replace(ext,'');
-                var arquivoPath = path.join(path.resolve('.'),arquivo);
+                var arquivoPath = arquivo;
+
+                var nomeClasseDominio =  path.basename(arquivoPath).replace(ext,'');
 
                 if(!fs.existsSync(arquivoPath)) throw new Error('Arquivo não encontrado:' + arquivoPath);
 
-                var model = require(path.join(path.resolve('.'),arquivo));
+                var model = require(arquivoPath);
 
                 gerenciadorDeMapeamentos.adicioneModel(nomeClasseDominio,model);
             }
@@ -1579,7 +1583,7 @@ var Principal = (function () {
         for (var i in arquivos) {
             var arquivo = arquivos[i];
 
-            var mapeamento = this.processeArquivo(dir_xml + arquivo);
+            var mapeamento = this.processeArquivo(path.join(dir_xml, arquivo));
 
             gerenciadorDeMapeamentos.adicione(mapeamento);
         }
