@@ -1686,6 +1686,10 @@ var GerenciadorDeMapeamentos = (function () {
             console.log(prop);
             const valor = objeto[prop];
 
+            if( Array.isArray(valor)) {
+                continue;
+            }
+
             if( valor instanceof Date) {
                 colunas.push(camelToSnake(prop));
                 valores.push(valor);
