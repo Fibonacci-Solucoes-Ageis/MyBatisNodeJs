@@ -64,12 +64,13 @@ function Colecao() {
     this.tipo = null;
 }
 
-Colecao.prototype.adicione = function(chaveColecao, instancia) {
+Colecao.prototype.adicione = function(chaveColecao, instancia, registro, noResultMap, prefixo) {
     var objetoColecao = this.mapaColecao[chaveColecao];
 
     if( !objetoColecao ) {
         if( !instancia ) {
-            const modelColecao = global.sessionFactory.models[this.tipo][this.tipo];
+            const nomeModel = noResultMap.obtenhaNomeModel(registro, prefixo);
+            var modelColecao = global.sessionFactory.models[nomeModel][nomeModel];
 
             if (global.es7) {
                 instancia = new modelColecao();
@@ -91,11 +92,13 @@ function chequeErros(chave, mapColunas, erros, noResultMap, novoCaminho) {
     if (mapColunas[chave] && mapColunas[chave].length > 0) {
         erros.qtde ++;
         erros.erros.push('erro: ');
-        console.warn('-------------------------------------------------');
-        console.warn('\tWarning: ' + erros.resultMap);
-        console.warn('\t' + (erros.erros.length) +  '. Erro ' + erros.qtde);
-        console.warn('\t' + novoCaminho.toString() + " <-> " + mapColunas[chave][0].caminhoInteiro);
-        console.warn("\tColuna " + chave + ' já está associada. ResultMap: ' + noResultMap.obtenhaNomeCompleto());
+        if( global.exibirWarnings ) {
+            console.warn('-------------------------------------------------');
+            console.warn('\tWarning: ' + erros.resultMap);
+            console.warn('\t' + (erros.erros.length) + '. Erro ' + erros.qtde);
+            console.warn('\t' + novoCaminho.toString() + " <-> " + mapColunas[chave][0].caminhoInteiro);
+            console.warn("\tColuna " + chave + ' já está associada. ResultMap: ' + noResultMap.obtenhaNomeCompleto());
+        }
     } else {
         mapColunas[chave] = [];
     }
@@ -866,12 +869,15 @@ var NoResultMap = (function (_super) {
         var mapaColecoes = {};
         var listaDeColecoes = [];
 
-        var model = gerenciadorDeMapeamentos.obtenhaModel(this.tipo);
-
-        model = model[this.tipo];
 
         for( var i = 0; i < registros.length; i++ ) {
             let registro = registros[i];
+
+            var nomeModel = this.obtenhaNomeModel(registro, '');
+
+            var model = gerenciadorDeMapeamentos.obtenhaModel(nomeModel);
+
+            model = model[nomeModel];
 
             var chavePrincipal = this.tipo + this.obtenhaID(registro, '');
 
@@ -892,73 +898,87 @@ var NoResultMap = (function (_super) {
             }
 
             for( const prop in registro) {
-                var propColuna = this.map2Colunas[prop];
+                var listaDeColunas = this.map2Colunas[prop];
 
-                if( propColuna == null ) {
+                if( listaDeColunas == null ) {
                     continue;
                 }
 
-                var valor = registro[prop];
+                for( var indice = 0; indice < listaDeColunas.length; indice ++ ) {
+                    var propColuna = listaDeColunas[indice];
 
-                atribuaValor(propColuna.novoCaminho, instancia, valor, (val, caminho, pedaco, prefixo) => {
-                    if( pedaco.ehColecao ) {
-                        var chave = '$$' + pedaco.pedaco;
-                        var colecao = val[chave];
+                    var valor = registro[prop];
 
-                        if( colecao == null ) {
-                            colecao = new Colecao();
-                            colecao.tipo = pedaco.tipo;
-                            colecao.objeto = val;
-                            colecao.propriedade = chave;
-
-                            listaDeColecoes.push(colecao);
-
-                            val[pedaco.pedaco] = colecao.lista;
-                            val[chave] = colecao;
-                        }
-
-                        var chave = pedaco.noResultMap.obtenhaID(registro, prefixo);
-
-                        if( chave === '') {
-                            return null;
-                        }
-
-                        var chaveObjeto = pedaco.noResultMap.obtenhaNomeCompleto() + "::" + chave;
-                        var objetoNaCache = mapaObjetos[chaveObjeto];
-
-                        var temNaCache = objetoNaCache != null;
-
-                        objetoNaCache = colecao.adicione(chave, objetoNaCache);
-
-                        if( !temNaCache ) {
-                            mapaObjetos[chaveObjeto] = objetoNaCache;
-                        }
-
-                        pedaco.noResultMap.atribuaPropriedadesId(objetoNaCache, registro, prefixo);
-
-                        return objetoNaCache;
-                    } else if( propColuna.noPai && propColuna.noPai.prop.constructor.name === 'NoAssociacao' ) {
-                        var objeto = val[pedaco.pedaco];
-
-                        if( objeto == null ) {
-                            var tipo = pedaco.noResultMap.tipo;
-                            const model = global.sessionFactory.models[tipo][tipo];
-
-                            if (global.es7) {
-                                objeto = new model();
+                    if (valor instanceof Buffer) {
+                        if (valor.length == 1) {
+                            if (valor[0] == 0) {
+                                valor = false;
                             } else {
-                                objeto = Object.create(model.prototype);
-                                objeto.constructor.apply(instance, []);
+                                valor = true;
                             }
-
-                            val[pedaco.pedaco] = objeto;
                         }
-
-                        return objeto;
                     }
 
-                    return val;
-                });
+                    atribuaValor(propColuna.novoCaminho, instancia, valor, (val, caminho, pedaco, prefixo) => {
+                        if( pedaco.ehColecao ) {
+                            var chave = '$$' + pedaco.pedaco;
+                            var colecao = val[chave];
+
+                            if( colecao == null ) {
+                                colecao = new Colecao();
+                                colecao.tipo = pedaco.tipo;
+                                colecao.objeto = val;
+                                colecao.propriedade = chave;
+
+                                listaDeColecoes.push(colecao);
+
+                                val[pedaco.pedaco] = colecao.lista;
+                                val[chave] = colecao;
+                            }
+
+                            var chave = pedaco.noResultMap.obtenhaID(registro, prefixo);
+
+                            if( chave === '') {
+                                return null;
+                            }
+
+                            var chaveObjeto = pedaco.noResultMap.obtenhaNomeCompleto() + "::" + chave;
+                            var objetoNaCache = mapaObjetos[chaveObjeto];
+
+                            var temNaCache = objetoNaCache != null;
+
+                            objetoNaCache = colecao.adicione(chave, objetoNaCache, registro, pedaco.noResultMap, prefixo);
+
+                            if( !temNaCache ) {
+                                mapaObjetos[chaveObjeto] = objetoNaCache;
+                            }
+
+                            pedaco.noResultMap.atribuaPropriedadesId(objetoNaCache, registro, prefixo);
+
+                            return objetoNaCache;
+                        } else {
+                            var objeto = val[pedaco.pedaco];
+
+                            if( objeto == null ) {
+                                const nomeModel = pedaco.noResultMap.obtenhaNomeModel(registro, prefixo);
+                                const model = global.sessionFactory.models[nomeModel][nomeModel];
+
+                                if (global.es7) {
+                                    objeto = new model();
+                                } else {
+                                    objeto = Object.create(model.prototype);
+                                    objeto.constructor.apply(objeto, []);
+                                }
+
+                                val[pedaco.pedaco] = objeto;
+                            }
+
+                            return objeto;
+                        }
+
+                        return val;
+                    });
+                }
             }
         }
 
@@ -1507,7 +1527,6 @@ var Principal = (function () {
 
         var gerenciadorDeMapeamentos = new GerenciadorDeMapeamentos();
 
-
         var models = {};
 
         var walk = function(dir, done) {
@@ -1516,21 +1535,26 @@ var Principal = (function () {
             var pending = list.length;
             if (!pending) return done(null, results);
             list.forEach(function(file) {
-                var file = dir + '/' + file;
+                var arquivo = path.resolve(dir) + '/' + file;
 
-                var stat = fs.statSync(file);
+                var stat = null;
 
-                if (stat && stat.isDirectory() && file.indexOf('.svn') ==-1) {
-                    walk(file, function(err, res) {
+                try {
+                    stat = fs.statSync(arquivo);
+                } catch(erro) {
+                    arquivo = file;
+                    stat = fs.statSync(arquivo);
+                }
+
+                if (stat && stat.isDirectory() && arquivo.indexOf('.svn') ==-1) {
+                    walk(arquivo, function(err, res) {
                         results = results.concat(res);
                         if (!--pending) done(null, results);
                     });
                 } else {
-                    results.push(file);
+                    results.push(arquivo);
                     if (!--pending) done(null, results);
                 }
-
-
             });
         };
 
@@ -1543,13 +1567,13 @@ var Principal = (function () {
                 var arquivo = arquivos[i];
                 if( !arquivo.endsWith(ext) ) continue;
 
-                var nomeArquivo = path.basename(arquivo);
-                var nomeClasseDominio =  nomeArquivo.replace(ext,'');
-                var arquivoPath = path.join(path.resolve('.'),arquivo);
+                var arquivoPath = arquivo;
+
+                var nomeClasseDominio =  path.basename(arquivoPath).replace(ext,'');
 
                 if(!fs.existsSync(arquivoPath)) throw new Error('Arquivo não encontrado:' + arquivoPath);
 
-                var model = require(path.join(path.resolve('.'),arquivo));
+                var model = require(arquivoPath);
 
                 gerenciadorDeMapeamentos.adicioneModel(nomeClasseDominio,model);
             }
@@ -1559,7 +1583,7 @@ var Principal = (function () {
         for (var i in arquivos) {
             var arquivo = arquivos[i];
 
-            var mapeamento = this.processeArquivo(dir_xml + arquivo);
+            var mapeamento = this.processeArquivo(path.join(dir_xml, arquivo));
 
             gerenciadorDeMapeamentos.adicione(mapeamento);
         }
@@ -1953,7 +1977,7 @@ var GerenciadorDeMapeamentos = (function () {
 
                     if (noResultMap) {
                         var inicio = new Date();
-                        var objetos = noResultMap.crieObjetos(me, rows);
+                        var objetos = noResultMap.crieObjetos2(me, rows);
 
                         resolve(objetos);
                     } else {
