@@ -43,7 +43,7 @@ Conexao.prototype.commit = function(options, callback) {
 Conexao.prototype.rollback = function(options, callback) {
     this.temTransacao = false;
 
-    this.connnection.commit(callback);
+    this.connection.rollback(options, callback);
 }
 
 Conexao.prototype.ping = function(options, callback) {

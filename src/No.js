@@ -1719,6 +1719,9 @@ var GerenciadorDeMapeamentos = (function () {
                 valores.push(valor);
             }
             else if (valor instanceof Object) {
+                if( !valor.id ) {
+                    continue;
+                }
                 colunas.push(camelToSnake(prop) + "_id");
                 valores.push(valor.id);
             } else {
