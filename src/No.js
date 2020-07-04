@@ -1710,6 +1710,10 @@ var GerenciadorDeMapeamentos = (function () {
             console.log(prop);
             const valor = objeto[prop];
 
+            if( valor === undefined || valor === null ) {
+                continue;
+            }
+
             if( Array.isArray(valor)) {
                 continue;
             }

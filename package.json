@@ -1,7 +1,7 @@
 {
   "name": "mybatisnodejs",
   "description": "MyBatisNodeJs is a port from the The MyBatis Java data mapper framework for Node.Js.",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "dependencies": {
     "moment": "*",
     "xmldom": "*"
