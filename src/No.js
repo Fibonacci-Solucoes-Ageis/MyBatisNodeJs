@@ -506,6 +506,16 @@ var NoForEach = (function (_super) {
                 } else if (typeof valorPropriedade == 'boolean') {
                     novaExpressao = novaExpressao.replace(trecho, '?');
                     comandoSql.adicioneParametro(valorPropriedade);
+                }  else if (util.isDate(valorPropriedade)) {
+                    var valor = moment(valorPropriedade).format('YYYY-MM-DD HH:mm:ss');
+
+                    // console.log(valor);
+                    expressao = expressao.replace(trecho, '?');
+
+                    comandoSql.adicioneParametro(valor);
+                } else {
+                    novaExpressao = novaExpressao.replace(trecho, '?');
+                    comandoSql.adicioneParametro(null);
                 }
             }
 
