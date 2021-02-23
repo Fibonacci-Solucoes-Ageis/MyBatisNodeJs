@@ -1717,7 +1717,7 @@ var GerenciadorDeMapeamentos = (function () {
         var params = [];
 
         for( const prop in objeto) {
-            console.log(prop);
+            //console.log(prop);
             const valor = objeto[prop];
 
             if( valor === undefined || valor === null ) {

@@ -148,7 +148,7 @@ Contexto.prototype = {
     release:function(){
         if(this.conexao) {
             if (pool._freeConnections.indexOf(this.conexao) == -1) {
-                console.log('fazendo release');
+                //console.log('fazendo release');
                 this.conexao.release();
             }
         }
