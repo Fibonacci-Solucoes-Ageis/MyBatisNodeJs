@@ -97,6 +97,11 @@ Contexto.prototype = {
     carregou :function(connection) {
         this.conexao = new Conexao(connection);
 
+        if( this.encerrou ) {
+
+            this.release();
+            return;
+        }
         this.carregando = false;
         for(var i=0; i< this.callbacks.length; i++) {
             this.callbacks[i](this.conexao);
@@ -151,6 +156,8 @@ Contexto.prototype = {
                 //console.log('fazendo release');
                 this.conexao.release();
             }
+        } else {
+            this.encerrou = true;
         }
 
     },
@@ -198,6 +205,15 @@ function domainMiddleware(req, res, next) {
     });
 
     res.on('finish', function () {
+        if( reqDomain.contexto ) {
+            reqDomain.contexto.release();
+            reqDomain.contexto = null;
+            reqDomain.id = null;
+            //reqDomain.dispose();
+        }
+    });
+
+    res.on('error', function() {
         if( reqDomain.contexto ) {
             reqDomain.contexto.release();
             reqDomain.contexto = null;
