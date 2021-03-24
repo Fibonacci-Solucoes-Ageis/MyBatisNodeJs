@@ -919,6 +919,9 @@ var NoResultMap = (function (_super) {
 
                     var valor = registro[prop];
 
+                    if( valor === null ) {
+                        continue;
+                    }
                     if (valor instanceof Buffer) {
                         if (valor.length == 1) {
                             if (valor[0] == 0) {
@@ -972,6 +975,11 @@ var NoResultMap = (function (_super) {
                             if( objeto == null ) {
                                 const nomeModel = pedaco.noResultMap.obtenhaNomeModel(registro, prefixo);
                                 const model = global.sessionFactory.models[nomeModel][nomeModel];
+
+                                const idObjeto = pedaco.noResultMap.obtenhaID(registro, '')
+                                if( !idObjeto ) {
+                                    return null;
+                                }
 
                                 if (global.es7) {
                                     objeto = new model();
@@ -1058,6 +1066,9 @@ var NoResultMap = (function (_super) {
 
             var instance = null;
 
+            if( nomeModel === 'Campanha' ) {
+                console.log(3);
+            }
             if (global.es7) {
                 instance = new model();
             } else {
