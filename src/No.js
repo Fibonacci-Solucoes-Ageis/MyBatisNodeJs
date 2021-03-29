@@ -976,7 +976,7 @@ var NoResultMap = (function (_super) {
                                 const nomeModel = pedaco.noResultMap.obtenhaNomeModel(registro, prefixo);
                                 const model = global.sessionFactory.models[nomeModel][nomeModel];
 
-                                const idObjeto = pedaco.noResultMap.obtenhaID(registro, '')
+                                const idObjeto = pedaco.noResultMap.obtenhaID(registro, prefixo);
                                 if( !idObjeto ) {
                                     console.warn('Erro no resultmap está sem id: ', pedaco.noResultMap.nomeCompleto);
                                 }
