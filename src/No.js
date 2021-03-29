@@ -872,7 +872,7 @@ var NoResultMap = (function (_super) {
         return chave;
     };
 
-    NoResultMap.prototype.crieObjetos2 = function(gerenciadorDeMapeamentos, registros) {
+    NoResultMap.prototype.crieObjetos2 = function(nomeConsulta, gerenciadorDeMapeamentos, registros) {
         let objetos = [];
 
         var mapaObjetos = {};
@@ -978,7 +978,7 @@ var NoResultMap = (function (_super) {
 
                                 const idObjeto = pedaco.noResultMap.obtenhaID(registro, prefixo);
                                 if( !idObjeto ) {
-                                    console.warn('Erro no resultmap está sem id: ', pedaco.noResultMap.nomeCompleto);
+                                    //console.warn(`Consulta ${nomeConsulta} Erro no resultmap está sem id: ${pedaco.noResultMap.nomeCompleto}`);
                                 }
 
                                 if (global.es7) {
@@ -2005,7 +2005,7 @@ var GerenciadorDeMapeamentos = (function () {
 
                     if (noResultMap) {
                         var inicio = new Date();
-                        var objetos = noResultMap.crieObjetos2(me, rows);
+                        var objetos = noResultMap.crieObjetos2(nomeCompleto, me, rows);
 
                         resolve(objetos);
                     } else {
