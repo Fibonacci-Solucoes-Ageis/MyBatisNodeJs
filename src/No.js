@@ -978,7 +978,7 @@ var NoResultMap = (function (_super) {
 
                                 const idObjeto = pedaco.noResultMap.obtenhaID(registro, '')
                                 if( !idObjeto ) {
-                                    return null;
+                                    console.warn('Erro no resultmap está sem id: ', pedaco.noResultMap.nomeCompleto);
                                 }
 
                                 if (global.es7) {
