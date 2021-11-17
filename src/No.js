@@ -216,7 +216,7 @@ function atribuaValor(path, obj, val, fnProximo) {
             prefixo += pedaco.prefixo;
             var proximoObjeto = fnProximo(current, path, pedaco, prefixo);
 
-            if( proximoObjeto == null ) {
+            if (proximoObjeto == null) {
                 break;
             }
             // If the key doesn't exist, create it
@@ -247,6 +247,7 @@ var util = require('util');
 var moment = require('moment');
 var DOMParser = require('xmldom').DOMParser;
 var Contexto = require('./Contexto');
+const {active: dominio} = require("domain");
 
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
@@ -820,9 +821,16 @@ var NoResultMap = (function (_super) {
     NoResultMap.prototype.obtenhaID = function (registro, prefixo) {
         var pedacoObjeto = '';
 
-        var valor = this.propriedadesId.map( (propriedade) => {
-            return registro[propriedade.obtenhaColuna(prefixo)]
-        }).join('');
+        for (var i = 0; i < this.propriedadesId.length; i++) {
+            var propriedade = this.propriedadesId[i];
+
+            var valor = registro[propriedade.obtenhaColuna(prefixo)];
+            if (valor) {
+                pedacoObjeto += valor;
+            }
+        }
+
+        var valor = pedacoObjeto;
 
         /*
         for (var i = 0 in this.propriedadesId) {
@@ -872,7 +880,7 @@ var NoResultMap = (function (_super) {
         return chave;
     };
 
-    NoResultMap.prototype.crieObjetos2 = function(nomeConsulta, gerenciadorDeMapeamentos, registros) {
+    NoResultMap.prototype.crieObjetos2 = function(gerenciadorDeMapeamentos, registros) {
         let objetos = [];
 
         var mapaObjetos = {};
@@ -919,9 +927,6 @@ var NoResultMap = (function (_super) {
 
                     var valor = registro[prop];
 
-                    if( valor === null ) {
-                        continue;
-                    }
                     if (valor instanceof Buffer) {
                         if (valor.length == 1) {
                             if (valor[0] == 0) {
@@ -958,8 +963,11 @@ var NoResultMap = (function (_super) {
                             var chaveObjeto = pedaco.noResultMap.obtenhaNomeCompleto() + "::" + chave;
                             var objetoNaCache = mapaObjetos[chaveObjeto];
 
-                            var temNaCache = objetoNaCache != null;
+                            if( objetoNaCache ) {
+                                return objetoNaCache;
+                            }
 
+                            var temNaCache = objetoNaCache != null;
                             objetoNaCache = colecao.adicione(chave, objetoNaCache, registro, pedaco.noResultMap, prefixo);
 
                             if( !temNaCache ) {
@@ -976,10 +984,6 @@ var NoResultMap = (function (_super) {
                                 const nomeModel = pedaco.noResultMap.obtenhaNomeModel(registro, prefixo);
                                 const model = global.sessionFactory.models[nomeModel][nomeModel];
 
-                                const idObjeto = pedaco.noResultMap.obtenhaID(registro, prefixo);
-                                if( !idObjeto ) {
-                                    //console.warn(`Consulta ${nomeConsulta} Erro no resultmap está sem id: ${pedaco.noResultMap.nomeCompleto}`);
-                                }
 
                                 if (global.es7) {
                                     objeto = new model();
@@ -1007,6 +1011,127 @@ var NoResultMap = (function (_super) {
         }
 
         return objetos;
+    }
+
+    NoResultMap.prototype.crieObjeto2 = function(gerenciadorDeMapeamentos, registro, mapaObjetos, mapaColecoes, listaDeColecoes) {
+        var nomeModel = this.obtenhaNomeModel(registro, '');
+
+        var model = gerenciadorDeMapeamentos.obtenhaModel(nomeModel);
+
+        model = model[nomeModel];
+
+        var chavePrincipal = this.tipo + this.obtenhaID(registro, '');
+
+        const objetoNaCache = mapaObjetos[chavePrincipal];
+
+        var instancia = null;
+        var existia = false;
+        if( objetoNaCache ) {
+            instancia = objetoNaCache;
+            existia = true;
+        } else {
+            if (global.es7) {
+                instancia = new model();
+            } else {
+                instancia = Object.create(model.prototype);
+                instancia.constructor.apply(instancia, []);
+            }
+            //objetos.push(instancia);
+            mapaObjetos[chavePrincipal] = instancia;
+        }
+
+        for( const prop in registro) {
+            var listaDeColunas = this.map2Colunas[prop];
+
+            if( listaDeColunas == null ) {
+                continue;
+            }
+
+            for( var indice = 0; indice < listaDeColunas.length; indice ++ ) {
+                var propColuna = listaDeColunas[indice];
+
+                var valor = registro[prop];
+
+                if (valor instanceof Buffer) {
+                    if (valor.length == 1) {
+                        if (valor[0] == 0) {
+                            valor = false;
+                        } else {
+                            valor = true;
+                        }
+                    }
+                }
+
+                atribuaValor(propColuna.novoCaminho, instancia, valor, (val, caminho, pedaco, prefixo) => {
+                    if( pedaco.ehColecao ) {
+
+                        var chave = '$$' + pedaco.pedaco;
+
+                        var colecao = val[chave];
+
+
+                        if( colecao == null ) {
+                            colecao = new Colecao();
+                            colecao.tipo = pedaco.tipo;
+                            colecao.objeto = val;
+                            colecao.propriedade = chave;
+
+                            listaDeColecoes.push(colecao);
+
+                            val[pedaco.pedaco] = colecao.lista;
+                            val[chave] = colecao;
+                        }
+
+
+                        var chave = pedaco.noResultMap.obtenhaID(registro, prefixo);
+
+                        if( chave === '') {
+                            return null;
+                        }
+                        var chaveObjeto = pedaco.noResultMap.nomeCompleto + "::" + chave;
+                        var objetoNaCache = mapaObjetos[chaveObjeto];
+
+                        if( objetoNaCache ) {
+                            return objetoNaCache;
+                        }
+
+                        var temNaCache = objetoNaCache != null;
+                        objetoNaCache = colecao.adicione(chave, objetoNaCache, registro, pedaco.noResultMap, prefixo);
+
+
+                        if( !temNaCache ) {
+                            mapaObjetos[chaveObjeto] = objetoNaCache;
+                        }
+
+                        pedaco.noResultMap.atribuaPropriedadesId(objetoNaCache, registro, prefixo);
+                        return objetoNaCache;
+                    } else {
+                        var objeto = val[pedaco.pedaco];
+
+                        if( objeto == null ) {
+                            const nomeModel = pedaco.noResultMap.obtenhaNomeModel(registro, prefixo);
+                            const model = global.sessionFactory.models[nomeModel][nomeModel];
+
+
+                            if (global.es7) {
+                                objeto = new model();
+                            } else {
+                                objeto = Object.create(model.prototype);
+                                objeto.constructor.apply(objeto, []);
+                            }
+
+                            val[pedaco.pedaco] = objeto;
+                        }
+
+                        return objeto;
+                    }
+
+                    return val;
+                });
+            }
+        }
+
+        return existia ? null : instancia;
     }
 
     NoResultMap.prototype.crieObjetos = function (gerenciadorDeMapeamentos, registros) {
@@ -1066,9 +1191,6 @@ var NoResultMap = (function (_super) {
 
             var instance = null;
 
-            if( nomeModel === 'Campanha' ) {
-                console.log(3);
-            }
             if (global.es7) {
                 instance = new model();
             } else {
@@ -1159,7 +1281,7 @@ var NoResultMap = (function (_super) {
     };
 
     NoResultMap.prototype.atribuaPropriedadesId = function (instance,registro,prefixo) {
-        for (var j in this.propriedadesId) {
+        for (var j = 0; j < this.propriedadesId.length; j++) {
             var propId = this.propriedadesId[j];
 
             var valor = registro[propId.obtenhaColuna(prefixo)];
@@ -1992,38 +2114,61 @@ var GerenciadorDeMapeamentos = (function () {
                     parametros.nestTables = "_";
                 }
 
-                connection.query(parametros, comandoSql.parametros, dominio.intercept(function (rows, fields,err) {
-                    if (err) {
-                        console.log(err);
-                        console.log(err.message);
-                        return reject(err);
-                    }
+                const tInicio = new Date();
+                const query = connection.connection.query(parametros, comandoSql.parametros);
 
-                    if( rows.length > 1000 ) {
-                        console.warn("Possível ponto de melhoria: " + nomeCompleto + " Trouxe: " + rows.length + " registros");
-                    }
+                let objetos = [];
+
+                var mapaObjetos = {};
+                var mapaColecoes = {};
+                var listaDeColecoes = [];
+                var qtdeRegistros = 0;
+                query.on('result', dominio.bind(function(row, err) {
+                    qtdeRegistros ++;
+                    connection.connection.pause();
+                    //  dominio.intercept( () => {
+
 
                     if (noResultMap) {
                         var inicio = new Date();
-                        var objetos = noResultMap.crieObjetos2(nomeCompleto, me, rows);
+                        var objeto = noResultMap.crieObjeto2(me, row, mapaObjetos, mapaColecoes, listaDeColecoes);
 
-                        resolve(objetos);
+                        if( objeto ) objetos.push(objeto);
+                        //console.log('Tempo: ' + (new Date().getTime() - inicio.getTime()));
+                        //console.log('Tempo')
+                        //resolve(objetos);
                     } else {
                         if (no.javaType == 'String' || no.javaType == 'int' || no.javaType == 'long' || no.javaType == 'java.lang.Long') {
-                            var objetos = [];
 
-                            for (var i in rows) {
-                                var row = rows[i];
 
-                                for (var j in row) {
-                                    objetos.push(row[j]);
-                                    break;
-                                }
+                            // for (var i in rows) {
+                            //   var row = rows[i];
+
+                            for (var j in row) {
+                                objetos.push(row[j]);
+                                //      break;
                             }
+                            // }
 
-                            resolve(objetos);
+                            //resolve(objetos);
                         }
                     }
+
+                    connection.connection.resume();
+                }));
+                query.on('end', dominio.bind(function(err) {
+                    //console.log('Tempo: ' + (new Date().getTime() - tInicio.getTime()));
+                    if( qtdeRegistros > 1000 ) {
+                        console.warn("Possível ponto de melhoria: " + nomeCompleto + " Trouxe: " + qtdeRegistros + " registros");
+                    }
+
+                    for (var i = 0; i < listaDeColecoes.length; i++) {
+                        var colecao = listaDeColecoes[i];
+
+                        delete colecao.objeto[colecao.propriedade]
+                    }
+
+                    resolve(objetos);
                 }));
             });
         });
