@@ -963,11 +963,8 @@ var NoResultMap = (function (_super) {
                             var chaveObjeto = pedaco.noResultMap.obtenhaNomeCompleto() + "::" + chave;
                             var objetoNaCache = mapaObjetos[chaveObjeto];
 
-                            if( objetoNaCache ) {
-                                return objetoNaCache;
-                            }
-
                             var temNaCache = objetoNaCache != null;
+
                             objetoNaCache = colecao.adicione(chave, objetoNaCache, registro, pedaco.noResultMap, prefixo);
 
                             if( !temNaCache ) {
@@ -1088,12 +1085,9 @@ var NoResultMap = (function (_super) {
                         if( chave === '') {
                             return null;
                         }
-                        var chaveObjeto = pedaco.noResultMap.nomeCompleto + "::" + chave;
-                        var objetoNaCache = mapaObjetos[chaveObjeto];
 
-                        if( objetoNaCache ) {
-                            return objetoNaCache;
-                        }
+                        var chaveObjeto = pedaco.noResultMap.obtenhaNomeCompleto() + "::" + chave;
+                        var objetoNaCache = mapaObjetos[chaveObjeto];
 
                         var temNaCache = objetoNaCache != null;
                         objetoNaCache = colecao.adicione(chave, objetoNaCache, registro, pedaco.noResultMap, prefixo);
