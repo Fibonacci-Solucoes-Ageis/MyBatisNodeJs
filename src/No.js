@@ -2123,6 +2123,7 @@ var GerenciadorDeMapeamentos = (function () {
                 var mapaColecoes = {};
                 var listaDeColecoes = [];
                 var qtdeRegistros = 0;
+                var deuErro = false;
                 query.on('result', dominio.bind(function(row, err) {
                     qtdeRegistros ++;
                     connection.connection.pause();
@@ -2156,10 +2157,14 @@ var GerenciadorDeMapeamentos = (function () {
                     connection.connection.resume();
                 }));
                 query.on('error', dominio.bind(function(err) {
-                    console.log(err);
+                    console.log(err.message);
+                    deuErro = true;
                     throw err;
                 }));
                 query.on('end', dominio.bind(function(err) {
+                    if( deuErro ) {
+                        return;
+                    }
                     //console.log('Tempo: ' + (new Date().getTime() - tInicio.getTime()));
                     if( qtdeRegistros > 1000 ) {
                         console.warn("Possível ponto de melhoria: " + nomeCompleto + " Trouxe: " + qtdeRegistros + " registros");
