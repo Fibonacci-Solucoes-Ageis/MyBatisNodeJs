@@ -2140,7 +2140,6 @@ var GerenciadorDeMapeamentos = (function () {
                     } else {
                         if (no.javaType == 'String' || no.javaType == 'int' || no.javaType == 'long' || no.javaType == 'java.lang.Long') {
 
-
                             // for (var i in rows) {
                             //   var row = rows[i];
 
