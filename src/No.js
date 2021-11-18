@@ -2156,6 +2156,10 @@ var GerenciadorDeMapeamentos = (function () {
 
                     connection.connection.resume();
                 }));
+                query.on('error', dominio.bind(function(err) {
+                    console.log(err);
+                    throw err;
+                }));
                 query.on('end', dominio.bind(function(err) {
                     //console.log('Tempo: ' + (new Date().getTime() - tInicio.getTime()));
                     if( qtdeRegistros > 1000 ) {
