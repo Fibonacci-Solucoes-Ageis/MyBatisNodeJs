@@ -830,28 +830,14 @@ var NoResultMap = (function (_super) {
             }
         }
 
-        var valor = pedacoObjeto;
-
-        /*
-        for (var i = 0 in this.propriedadesId) {
-          var propriedade = this.propriedadesId[i];
-
-          var valor = registro[propriedade.obtenhaColuna(prefixo)];
-
-          if (valor != null) {
-            pedacoObjeto += valor;
-          } else {
-            //throw new Error("Chave do objeto não pode ser calculada. \nColuna '" + propriedade.coluna + "' não encontrada para o resultMap '" + this.id + "'");
-          }
+        if (!pedacoObjeto) {
+            //console.warn("Chave do objeto não pode ser calculada. \nColuna '" + propriedade.coluna + "' não encontrada para o resultMap '" + this.id + "'");
+            return null;
         }
 
-        if (pedacoObjeto == '') {
-          return null;
-        }
-    */
-        return valor;
+        //return valor;
 
-        //return pedacoObjeto;
+        return pedacoObjeto;
     };
 
     NoResultMap.prototype.obtenhaChave = function (registro, chavePai,prefixo) {
@@ -879,136 +865,6 @@ var NoResultMap = (function (_super) {
 
         return chave;
     };
-
-    NoResultMap.prototype.crieObjetos2 = function(gerenciadorDeMapeamentos, registros) {
-        let objetos = [];
-
-        var mapaObjetos = {};
-        var mapaColecoes = {};
-        var listaDeColecoes = [];
-
-
-        for( var i = 0; i < registros.length; i++ ) {
-            let registro = registros[i];
-
-            var nomeModel = this.obtenhaNomeModel(registro, '');
-
-            var model = gerenciadorDeMapeamentos.obtenhaModel(nomeModel);
-
-            model = model[nomeModel];
-
-            var chavePrincipal = this.tipo + this.obtenhaID(registro, '');
-
-            const objetoNaCache = mapaObjetos[chavePrincipal];
-
-            var instancia = null;
-            if( objetoNaCache ) {
-                instancia = objetoNaCache;
-            } else {
-                if (global.es7) {
-                    instancia = new model();
-                } else {
-                    instancia = Object.create(model.prototype);
-                    instancia.constructor.apply(instancia, []);
-                }
-                objetos.push(instancia);
-                mapaObjetos[chavePrincipal] = instancia;
-            }
-
-            for( const prop in registro) {
-                var listaDeColunas = this.map2Colunas[prop];
-
-                if( listaDeColunas == null ) {
-                    continue;
-                }
-
-                for( var indice = 0; indice < listaDeColunas.length; indice ++ ) {
-                    var propColuna = listaDeColunas[indice];
-
-                    var valor = registro[prop];
-
-                    if (valor instanceof Buffer) {
-                        if (valor.length == 1) {
-                            if (valor[0] == 0) {
-                                valor = false;
-                            } else {
-                                valor = true;
-                            }
-                        }
-                    }
-
-                    atribuaValor(propColuna.novoCaminho, instancia, valor, (val, caminho, pedaco, prefixo) => {
-                        if( pedaco.ehColecao ) {
-                            var chave = '$$' + pedaco.pedaco;
-                            var colecao = val[chave];
-
-                            if( colecao == null ) {
-                                colecao = new Colecao();
-                                colecao.tipo = pedaco.tipo;
-                                colecao.objeto = val;
-                                colecao.propriedade = chave;
-
-                                listaDeColecoes.push(colecao);
-
-                                val[pedaco.pedaco] = colecao.lista;
-                                val[chave] = colecao;
-                            }
-
-                            var chave = pedaco.noResultMap.obtenhaID(registro, prefixo);
-
-                            if( chave === '') {
-                                return null;
-                            }
-
-                            var chaveObjeto = pedaco.noResultMap.obtenhaNomeCompleto() + "::" + chave;
-                            var objetoNaCache = mapaObjetos[chaveObjeto];
-
-                            var temNaCache = objetoNaCache != null;
-
-                            objetoNaCache = colecao.adicione(chave, objetoNaCache, registro, pedaco.noResultMap, prefixo);
-
-                            if( !temNaCache ) {
-                                mapaObjetos[chaveObjeto] = objetoNaCache;
-                            }
-
-                            pedaco.noResultMap.atribuaPropriedadesId(objetoNaCache, registro, prefixo);
-
-                            return objetoNaCache;
-                        } else {
-                            var objeto = val[pedaco.pedaco];
-
-                            if( objeto == null ) {
-                                const nomeModel = pedaco.noResultMap.obtenhaNomeModel(registro, prefixo);
-                                const model = global.sessionFactory.models[nomeModel][nomeModel];
-
-
-                                if (global.es7) {
-                                    objeto = new model();
-                                } else {
-                                    objeto = Object.create(model.prototype);
-                                    objeto.constructor.apply(objeto, []);
-                                }
-
-                                val[pedaco.pedaco] = objeto;
-                            }
-
-                            return objeto;
-                        }
-
-                        return val;
-                    });
-                }
-            }
-        }
-
-        for( var i = 0; i < listaDeColecoes.length; i++ ) {
-            var colecao = listaDeColecoes[i];
-
-            delete colecao.objeto[colecao.propriedade]
-        }
-
-        return objetos;
-    }
 
     NoResultMap.prototype.crieObjeto2 = function(gerenciadorDeMapeamentos, registro, mapaObjetos, mapaColecoes, listaDeColecoes) {
         var nomeModel = this.obtenhaNomeModel(registro, '');
@@ -1049,6 +905,9 @@ var NoResultMap = (function (_super) {
 
                 var valor = registro[prop];
 
+                if( valor === null || valor === 'undefined') {
+                    continue;
+                }
                 if (valor instanceof Buffer) {
                     if (valor.length == 1) {
                         if (valor[0] == 0) {
@@ -1106,6 +965,12 @@ var NoResultMap = (function (_super) {
                             const nomeModel = pedaco.noResultMap.obtenhaNomeModel(registro, prefixo);
                             const model = global.sessionFactory.models[nomeModel][nomeModel];
 
+                            const idObjeto = pedaco.noResultMap.obtenhaID(registro, prefixo);
+
+                            if( !idObjeto ) {
+                                //console.warn('Erro no resultmap está sem id: ', pedaco.noResultMap.nomeCompleto);
+                                return null;
+                            }
 
                             if (global.es7) {
                                 objeto = new model();
