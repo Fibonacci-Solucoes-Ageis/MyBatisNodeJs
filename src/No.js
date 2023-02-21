@@ -832,7 +832,7 @@ var NoResultMap = (function (_super) {
 
         if (!pedacoObjeto) {
             //console.warn("Chave do objeto não pode ser calculada. \nColuna '" + propriedade.coluna + "' não encontrada para o resultMap '" + this.id + "'");
-            return null;
+            return '';
         }
 
         //return valor;
@@ -941,7 +941,7 @@ var NoResultMap = (function (_super) {
 
                         var chave = pedaco.noResultMap.obtenhaID(registro, prefixo);
 
-                        if( chave === '') {
+                        if( !chave ) {
                             return null;
                         }
 
